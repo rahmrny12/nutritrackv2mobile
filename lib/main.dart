@@ -17,7 +17,11 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+<<<<<<< HEAD
       home: ProfilePage()
+=======
+      home: AuthPage()
+>>>>>>> f5241005e8c432e020139ac9fb6f5aa19251273d
     );
   }
 }
