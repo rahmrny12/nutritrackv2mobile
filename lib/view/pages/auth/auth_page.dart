@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/repository/auth_repository.dart';
-import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/viewmodel/auth_viewmodel.dart';
 
 class AuthPage extends StatefulWidget {
@@ -309,12 +309,9 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                           await viewModel.login();
 
                                           if (viewModel.value.user != null) {
-                                            Navigator.push(
+                                            Navigator.pushNamed(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const DashboardPage(),
-                                              ),
+                                              Routes.dashboard,
                                             );
                                           }
                                         },
