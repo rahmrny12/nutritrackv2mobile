@@ -19,4 +19,22 @@ class AuthRepository {
 
     return user;
   }
+
+  Future<UserModel> register({
+    required String name,
+    required String email,
+    required String username,
+    required String passsword,
+    required String passwordConfirmation,
+  }) async {
+    final res = await api.post('/register', {
+      "name": name,
+      "email": email,
+      "username": username,
+      "password": passsword,
+      "password_confirmation": passwordConfirmation,
+    });
+
+    return UserModel.fromJson(res);
+  }
 }

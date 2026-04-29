@@ -3,7 +3,10 @@
         android:label="nutritrack"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+<<<<<<< HEAD
         <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+=======
+>>>>>>> 2eb95cc0854d0ce4d6c6dcdb374747b0a596e6e6
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -41,8 +41,14 @@ class AppTheme {
       ),
 
       // Body
-      bodyLarge: TextStyle(fontSize: 16, color: Colors.black87),
-      bodyMedium: TextStyle(fontSize: 14, color: Colors.black54),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        color: Colors.black54,
+      ),
 
       // Button
       labelLarge: TextStyle(
@@ -57,7 +63,9 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
       ),
     ),
 
