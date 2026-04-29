@@ -51,8 +51,6 @@ class IngredientModel {
       protein: (json['protein'] as num).toDouble(),
       carbs: (json['carbs'] as num).toDouble(),
       fat: (json['fat'] as num).toDouble(),
-      emoji: json['emoji'] as String?,
-      portion: (json['portion'] as num?)?.toDouble(),
     );
   }
 
@@ -64,8 +62,6 @@ class IngredientModel {
       'protein': protein,
       'carbs': carbs,
       'fat': fat,
-      'emoji': emoji,
-      'portion': portion,
     };
   }
 }

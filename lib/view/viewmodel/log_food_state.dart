@@ -1,10 +1,12 @@
 import 'package:nutritrack/data/models/ingredient_model.dart';
 
 class LogFoodState {
+  final List<IngredientModel> ingredients;
   final List<IngredientModel> selectedFoods;
   final String? error;
 
   LogFoodState({
+    this.ingredients = const [],
     this.selectedFoods = const [],
     this.error,
   });
@@ -28,10 +30,12 @@ class LogFoodState {
   int get totalItems => selectedFoods.length;
 
   LogFoodState copyWith({
+    List<IngredientModel>? ingredients,
     List<IngredientModel>? selectedFoods,
     String? error,
   }) {
     return LogFoodState(
+      ingredients: ingredients ?? this.ingredients,
       selectedFoods: selectedFoods ?? this.selectedFoods,
       error: error,
     );

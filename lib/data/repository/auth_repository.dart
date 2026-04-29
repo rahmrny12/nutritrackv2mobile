@@ -1,4 +1,5 @@
 import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/core/token_storage.dart';
 import 'package:nutritrack/data/models/user_model.dart';
 
 class AuthRepository {
@@ -12,6 +13,10 @@ class AuthRepository {
       "password": password,
     });
 
-    return UserModel.fromJson(res);
+    final user = UserModel.fromJson(res);
+
+    await TokenStorage.saveToken(user.token);
+
+    return user;
   }
 }

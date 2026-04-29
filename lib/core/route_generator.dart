@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:nutritrack/view/pages/auth/auth_page.dart';
 import 'package:nutritrack/view/pages/auth/login_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
+import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
 
 class Routes {
+  static const String dashboard = '/';
   static const String auth = '/auth';
   static const String login = '/login';
-  static const String dashboard = '/dashboard';
   static const String confirmLogFood = '/confirm-log-food';
   static const String initialLogFood = '/initial-log-food';
+  static const String addMeal = '/add-meal';
   static const String profile = '/profile';
 }
 
@@ -28,6 +30,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const ConfirmLogFood());
       case Routes.initialLogFood:
         return MaterialPageRoute(builder: (_) => const InitialLogFood());
+      case Routes.addMeal:
+        return MaterialPageRoute(builder: (_) => const AddMealPage());
       case Routes.profile:
         return MaterialPageRoute(builder: (_) => const ProfilePage());
       default:

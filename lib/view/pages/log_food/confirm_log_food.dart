@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/data/repository/ingredient_repository.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 
@@ -19,7 +21,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
   void initState() {
     super.initState();
     // Menggunakan global singleton instance
-    _viewModel = LogFoodViewModel();
+    _viewModel = LogFoodViewModel(repo: IngredientRepository(ApiService()));
   }
 
   @override
