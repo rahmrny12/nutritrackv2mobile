@@ -9,7 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-<<<<<<< HEAD
   http: ^1.6.0
   image_picker: ^1.2.1
   shared_preferences: ^2.5.5
@@ -18,14 +17,6 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-=======
-  http: ^1.2.1
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^5.0.0
->>>>>>> 2eb95cc0854d0ce4d6c6dcdb374747b0a596e6e6
 
 flutter:
   uses-material-design: true

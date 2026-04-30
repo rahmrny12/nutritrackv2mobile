@@ -185,7 +185,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () =>
+                              Navigator.pushNamed(context, Routes.register),
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
                             backgroundColor: Theme.of(
@@ -315,7 +316,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                             );
                                           }
                                         },
-                                  child: const Text("Masuk")
+                                  child: const Text("Masuk"),
                                 ),
                               ],
                             );

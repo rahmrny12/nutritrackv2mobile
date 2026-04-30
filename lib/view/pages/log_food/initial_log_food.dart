@@ -381,12 +381,12 @@ class _InitialLogFoodState extends State<InitialLogFood> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: const Color.fromARGB(255, 101, 101, 101),
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(
-                ingredient.emoji ?? '',
+                ingredient.emoji ?? '🍽️',
                 style: const TextStyle(fontSize: 26),
               ),
             ),
@@ -520,41 +520,6 @@ class _InitialLogFoodState extends State<InitialLogFood> {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, Routes.confirmLogFood),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2ABFB0),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2ABFB0).withOpacity(0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'Selesai (${state.totalItems})',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.arrow_forward,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          GestureDetector(
             onTap: () => showAddIngredientSheet(context, viewModel),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -573,6 +538,42 @@ class _InitialLogFoodState extends State<InitialLogFood> {
                 children: [
                   Text(
                     'Tambah Bahan',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, Routes.confirmLogFood),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2ABFB0),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2ABFB0).withOpacity(0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    'Selesai (${state.totalItems})',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
