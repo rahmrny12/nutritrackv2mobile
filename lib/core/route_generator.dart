@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/view/pages/auth/auth_page.dart';
+import 'package:nutritrack/view/pages/auth/bmi_page.dart';
 import 'package:nutritrack/view/pages/auth/login_page.dart';
 import 'package:nutritrack/view/pages/auth/register_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
@@ -17,6 +18,7 @@ class Routes {
   static const String initialLogFood = '/initial-log-food';
   static const String addMeal = '/add-meal';
   static const String profile = '/profile';
+  static const String bmi = '/bmi';
 }
 
 class RouteGenerator {
@@ -28,12 +30,14 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case Routes.register:
         return MaterialPageRoute(builder: (_) => const RegisterPage());
+      case Routes.bmi:
+        return MaterialPageRoute(builder: (_) => const BMIPage());
       case Routes.dashboard:
         return MaterialPageRoute(builder: (_) => const DashboardPage());
       case Routes.confirmLogFood:
         return MaterialPageRoute(builder: (_) => const ConfirmLogFood());
       case Routes.initialLogFood:
-        return MaterialPageRoute(builder: (_) => const InitialLogFood());
+        return MaterialPageRoute(builder: (_) => const ConfirmLogFood());
       case Routes.addMeal:
         return MaterialPageRoute(builder: (_) => const AddMealPage());
       case Routes.profile:
