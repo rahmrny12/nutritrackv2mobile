@@ -1,3 +1,4 @@
+import 'mood_tracker_pack.dart';
 import 'package:flutter/material.dart';
 import 'package:nutritrack/view/pages/auth/auth_page.dart';
 import 'package:nutritrack/view/pages/auth/login_page.dart';
@@ -17,7 +18,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: AuthPage()
+      home: const MoodTrackerPage()
     );
   }
 }
