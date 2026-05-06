@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/repository/auth_repository.dart';
-import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/viewmodel/auth_viewmodel.dart';
 
 class AuthPage extends StatefulWidget {
@@ -185,7 +185,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () =>
+                              Navigator.pushNamed(context, Routes.register),
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
                             backgroundColor: Theme.of(
@@ -309,16 +310,13 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                           await viewModel.login();
 
                                           if (viewModel.value.user != null) {
-                                            Navigator.push(
+                                            Navigator.pushNamed(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const DashboardPage(),
-                                              ),
+                                              Routes.dashboard,
                                             );
                                           }
                                         },
-                                  child: const Text("Masuk")
+                                  child: const Text("Masuk"),
                                 ),
                               ],
                             );

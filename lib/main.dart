@@ -1,10 +1,8 @@
 import 'mood_tracker_pack.dart';
 import 'package:flutter/material.dart';
-import 'package:nutritrack/view/pages/auth/auth_page.dart';
-import 'package:nutritrack/view/pages/auth/login_page.dart';
-import 'package:nutritrack/view/pages/dashboard_page.dart';
 
 import 'core/app_theme.dart';
+import 'core/route_generator.dart';
 
 void main() {
   runApp(const MainApp());
@@ -19,6 +17,8 @@ class MainApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const MoodTrackerPage()
+      initialRoute: Routes.bmi,
+      onGenerateRoute: RouteGenerator.generateRoute,
     );
   }
 }

@@ -71,11 +71,37 @@ class AppTheme {
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.grey.shade200,
+      fillColor: Colors.grey.shade100,
+
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+
+      hintStyle: const TextStyle(fontSize: 13, color: AppColors.grey),
+
+      labelStyle: const TextStyle(fontSize: 13, color: AppColors.grey),
+
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
       ),
     ),
   );
