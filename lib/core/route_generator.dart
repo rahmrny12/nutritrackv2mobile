@@ -37,7 +37,7 @@ class RouteGenerator {
       case Routes.confirmLogFood:
         return MaterialPageRoute(builder: (_) => const ConfirmLogFood());
       case Routes.initialLogFood:
-        return MaterialPageRoute(builder: (_) => const ConfirmLogFood());
+        return MaterialPageRoute(builder: (_) => const InitialLogFood());
       case Routes.addMeal:
         return MaterialPageRoute(builder: (_) => const AddMealPage());
       case Routes.profile:

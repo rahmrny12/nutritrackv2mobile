@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:nutritrack/core/token_storage.dart';
+import 'package:nutritrack/core/local_storage.dart';
 
 class ApiService {
   final String baseUrl = "http://localhost:8000/api";
@@ -15,7 +15,7 @@ class ApiService {
   }
 
   Future<Map<String, String>> _headersWithAuth() async {
-    final token = await TokenStorage.getToken();
+    final token = await LocalStorage.getToken();
     
     return {
       "Content-Type": "application/json",
