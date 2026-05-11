@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
+// import 'package:image_picker/image_picker.dart';
 import 'profile_page.dart';
 
 
@@ -14,7 +14,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _image;
-  final ImagePicker _picker = ImagePicker();
+  // final ImagePicker _picker = ImagePicker();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _locationController = TextEditingController();
@@ -49,13 +49,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 }
 
   Future<void> _pickImage() async {
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  // final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
-  if (pickedFile != null) {
-    setState(() {
-      _image = File(pickedFile.path);
-    });
-  }
+  // if (pickedFile != null) {
+  //   setState(() {
+  //     _image = File(pickedFile.path);
+  //   });
+  // }
 }
 
   @override

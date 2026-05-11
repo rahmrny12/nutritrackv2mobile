@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'edit_profile.dart';
-import 'langganan_page.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,22 +10,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ScrollController _scrollController = ScrollController();
-
   bool showCollapsedHeader = false;
 
   @override
   void initState() {
     super.initState();
-
     _scrollController.addListener(() {
       if (_scrollController.offset > 120 && !showCollapsedHeader) {
-        setState(() {
-          showCollapsedHeader = true;
-        });
+        setState(() => showCollapsedHeader = true);
       } else if (_scrollController.offset <= 120 && showCollapsedHeader) {
-        setState(() {
-          showCollapsedHeader = false;
-        });
+        setState(() => showCollapsedHeader = false);
       }
     });
   }
@@ -38,225 +30,223 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
- 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFF2F5F8),
-
-    body: Stack(
-      clipBehavior: Clip.none,
-      children: [
-
-        // ================= SCROLL =================
-        CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-
-            // ================= APP BAR =================
-            SliverAppBar(
-              expandedHeight: 230,
-              pinned: true,
-              elevation: 0,
-              backgroundColor: const Color(0xFF1E8076),
-              automaticallyImplyLeading: false,
-              leadingWidth: 90,
-              // avatar kecil kiri pas collapse
-              leading: showCollapsedHeader
-                  ? const Padding(
-                      padding: EdgeInsets.only(left: 25),
-                      child: CircleAvatar(
-                        radius: 18,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F5F8),
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          // ================= APP BAR =================
+          SliverAppBar(
+            expandedHeight: 60,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: const Color(0xFF1E8076),
+            automaticallyImplyLeading: false,
+            title: showCollapsedHeader
+                ? Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 16,
                         backgroundColor: Colors.white,
                         child: Icon(
                           Icons.person,
-                          size: 18,
+                          size: 16,
                           color: Color(0xFF2DC653),
                         ),
                       ),
-                    )
-                  : null,
-
-              // nama pas collapse
-              title: showCollapsedHeader
-              ? const Padding(
-                  padding: EdgeInsets.only(left: 20),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Syahidah',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  )
+                : null,
+            actions: showCollapsedHeader
+                ? [
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.logout_rounded, color: Colors.red),
+                    ),
+                  ]
+                : [],
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.pin,
+              background: Container(
+                color: const Color(0xFF1E8076),
+                alignment: Alignment.center,
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 20),
                   child: Text(
-                    'Syahidah',
+                    'Profile',
                     style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                  ),
-                )
-              : null,
-
-          centerTitle: false,
-
-             actions: showCollapsedHeader
-              ? [
-                  Padding(
-                  padding: const EdgeInsets.only(right: 30),
-                  child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.logout_rounded,
-                      size: 26,
-                      color: Colors.red,
-                    ),
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ]
-              : [],
-
-              flexibleSpace: FlexibleSpaceBar(
-                background: _buildProfileHeader(),
-              ),
-            ),
-
-            // ================= CONTENT =================
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-
-                    // jarak setelah avatar
-                    const SizedBox(height: 80),
-
-                    const Text(
-                      'Syahidah',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
-                          'Jember, Jawa Timur',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: 180,
-                      height: 44,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const EditProfileScreen(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(0xFF1E8C6E),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(50),
-                          ),
-                        ),
-                        child: const Text('Edit Profil'),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildDailyCaloriesCard(),
-                    const SizedBox(height: 16),
-
-                    _buildBodyConditionCard(),
-                    const SizedBox(height: 16),
-
-                    _buildPremiumCard(context),
-                    const SizedBox(height: 16),
-
-                    _buildLogoutButton(),
-                    const SizedBox(height: 30),
-                  ],
                 ),
               ),
             ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-
-Widget _buildProfileHeader() {
-  return Stack(
-    clipBehavior: Clip.none,
-    alignment: Alignment.topCenter,
-    children: [
-
-      // background hijau
-      Container(
-        width: double.infinity,
-        height: 180,
-        color: const Color(0xFF1E8076),
-      ),
-
-      // title
-      const Positioned(
-        top: 60,
-        child: Text(
-          'Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 30,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-
-      // avatar
-      Positioned(
-        bottom: -65,
-        child: Container(
-          width: 130,
-          height: 130,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 16,
-              ),
-            ],
           ),
 
-          child: const Icon(
-            Icons.person,
-            size: 60,
-            color: Color(0xFF2DC653),
+          // ================= CONTENT (avatar lives here, scrolls naturally) =================
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // ── Green-to-white transition with avatar overlapping ──
+                Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.topCenter,
+                  children: [
+                    // Green top portion behind avatar
+                    Container(height: 60, color: const Color(0xFF1E8076)),
+
+                    // White card body below
+                    Padding(
+                      padding: const EdgeInsets.only(top: 50),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF2F5F8),
+                        ),
+                        padding: const EdgeInsets.only(top: 60),
+                        child: const SizedBox(),
+                      ),
+                    ),
+
+                    // Avatar sits on the seam — scrolls with content naturally
+                    if (!showCollapsedHeader)
+                      Positioned(
+                        top: 10,
+                        child: // Avatar (smooth collapse like Instagram)
+                        AnimatedPositioned(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOut,
+                          top: showCollapsedHeader ? -30 : 10,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            opacity: showCollapsedHeader ? 0.0 : 1.0,
+                            child: AnimatedScale(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOut,
+                              scale: showCollapsedHeader ? 0.7 : 1.0,
+                              child: IgnorePointer(
+                                ignoring: showCollapsedHeader,
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 16,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Color(0xFF2DC653),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                // ── Profile info + cards ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        'Syahidah',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.location_on, size: 14, color: Colors.grey),
+                          SizedBox(width: 4),
+                          Text(
+                            'Jember, Jawa Timur',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      SizedBox(
+                        width: 180,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const EditProfileScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E8C6E),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                          ),
+                          child: const Text('Edit Profil'),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      _buildDailyCaloriesCard(),
+                      const SizedBox(height: 16),
+
+                      _buildBodyConditionCard(),
+                      const SizedBox(height: 16),
+
+                      _buildPremiumCard(context),
+                      const SizedBox(height: 16),
+
+                      _buildLogoutButton(),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
-    ],
-  );
-}
-Widget _buildDailyCaloriesCard() {
+    );
+  }
+
+  // ================= DAILY CALORIES CARD =================
+  Widget _buildDailyCaloriesCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -273,7 +263,6 @@ Widget _buildDailyCaloriesCard() {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -301,8 +290,6 @@ Widget _buildDailyCaloriesCard() {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Kalori
           _buildNutrientRow(
             label: 'Kalori',
             value: '1850 kcal',
@@ -310,8 +297,6 @@ Widget _buildDailyCaloriesCard() {
             color: const Color(0xFF2DC653),
           ),
           const SizedBox(height: 16),
-
-          // Protein
           _buildNutrientRow(
             label: 'Protein',
             value: '75 g',
@@ -319,8 +304,6 @@ Widget _buildDailyCaloriesCard() {
             color: const Color(0xFF4A90D9),
           ),
           const SizedBox(height: 16),
-
-          // Lemak
           _buildNutrientRow(
             label: 'Lemak',
             value: '62 g',
@@ -328,8 +311,6 @@ Widget _buildDailyCaloriesCard() {
             color: const Color(0xFFFFA500),
           ),
           const SizedBox(height: 16),
-
-          // Karbohidrat
           _buildNutrientRow(
             label: 'Karbohidrat',
             value: '230 g',
@@ -385,6 +366,7 @@ Widget _buildDailyCaloriesCard() {
     );
   }
 
+  // ================= BODY CONDITION CARD =================
   Widget _buildBodyConditionCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -402,7 +384,6 @@ Widget _buildDailyCaloriesCard() {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -430,8 +411,6 @@ Widget _buildDailyCaloriesCard() {
             ],
           ),
           const SizedBox(height: 18),
-
-          // Height & Weight Row
           Row(
             children: [
               Expanded(
@@ -444,8 +423,6 @@ Widget _buildDailyCaloriesCard() {
             ],
           ),
           const SizedBox(height: 14),
-
-          // BMI
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -495,18 +472,13 @@ Widget _buildDailyCaloriesCard() {
             ),
           ),
           const SizedBox(height: 14),
-
-          // Target
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFB),
               borderRadius: BorderRadius.circular(14),
-              border: Border(
-                left: BorderSide(
-                  color: const Color(0xFFFFA500),
-                  width: 3.5,
-                ),
+              border: const Border(
+                left: BorderSide(color: Color(0xFFFFA500), width: 3.5),
               ),
             ),
             child: Row(
@@ -581,8 +553,9 @@ Widget _buildDailyCaloriesCard() {
     );
   }
 
+  // ================= PREMIUM CARD =================
   Widget _buildPremiumCard(BuildContext context) {
-  return Container(
+    return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
@@ -598,12 +571,13 @@ Widget _buildDailyCaloriesCard() {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badge
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFA500),
                   borderRadius: BorderRadius.circular(50),
@@ -619,12 +593,14 @@ Widget _buildDailyCaloriesCard() {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.stars_rounded, color: Color(0xFFFFA500), size: 20),
+              const Icon(
+                Icons.stars_rounded,
+                color: Color(0xFFFFA500),
+                size: 20,
+              ),
             ],
           ),
           const SizedBox(height: 14),
-
-          // Title
           const Text(
             'Go Premium',
             style: TextStyle(
@@ -635,8 +611,6 @@ Widget _buildDailyCaloriesCard() {
             ),
           ),
           const SizedBox(height: 8),
-
-          // Description
           Text(
             'Dapatkan rencana diet personal dan analisis nutrisi mendalam untuk hasil yang lebih cepat.',
             style: TextStyle(
@@ -646,20 +620,11 @@ Widget _buildDailyCaloriesCard() {
             ),
           ),
           const SizedBox(height: 20),
-
-          // CTA Button
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LanggananPage(),
-                ),
-              );
-            },
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFA500),
                 foregroundColor: Colors.white,
@@ -682,29 +647,27 @@ Widget _buildDailyCaloriesCard() {
       ),
     );
   }
-}
 
-Widget _buildLogoutButton() {
-  return SizedBox(
-    width: double.infinity,
-    height: 55,
-    child: ElevatedButton.icon(
-      onPressed: () {},
-      icon: const Icon(Icons.logout_rounded),
-      label: const Text(
-        'Logout',
-        style: TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
+  // ================= LOGOUT BUTTON =================
+  Widget _buildLogoutButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton.icon(
+        onPressed: () {},
+        icon: const Icon(Icons.logout_rounded),
+        label: const Text(
+          'Logout',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
         ),
       ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-      ),
-    ),
-  );
+    );
+  }
 }

@@ -6,11 +6,7 @@ import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
-import 'package:nutritrack/view/pages/premium_page.dart';
 import 'package:nutritrack/view/pages/edit_profile.dart';
-import 'package:nutritrack/view/pages/langganan_page.dart';
-import 'package:nutritrack/view/pages/skriningdiabetes_page.dart';
-import 'package:nutritrack/view/pages/skriningasamurat.dart';
 
 
 class Routes {
@@ -47,12 +43,6 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
       case Routes.register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
-      case Routes.premium:
-        return MaterialPageRoute(builder: (_) => const PremiumScreen());
-        case Routes.langganan:
-      return MaterialPageRoute(builder: (_) => const LanggananPage());
-        case Routes.diabetes:
-      return MaterialPageRoute(builder: (_) => const SkriningDiabetesPage());
       default:
         return _errorRoute(settings.name);
     }
