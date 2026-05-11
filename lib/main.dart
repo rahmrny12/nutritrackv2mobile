@@ -16,8 +16,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const MoodTrackerPage()
-      initialRoute: Routes.bmi,
+      initialRoute: Routes.main,
       onGenerateRoute: RouteGenerator.generateRoute,
     );
   }

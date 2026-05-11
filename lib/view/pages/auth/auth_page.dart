@@ -26,7 +26,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    viewModel = AuthViewModel(AuthRepository(ApiService()));
+    viewModel = AuthViewModel(repo: AuthRepository(ApiService()));
 
     _animController = AnimationController(
       vsync: this,
@@ -312,7 +312,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                           if (viewModel.value.user != null) {
                                             Navigator.pushNamed(
                                               context,
-                                              Routes.dashboard,
+                                              Routes.bmi,
                                             );
                                           }
                                         },

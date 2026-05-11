@@ -25,7 +25,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-    viewModel = AuthViewModel(AuthRepository(ApiService()));
+    viewModel = AuthViewModel(repo: AuthRepository(ApiService()));
   }
 
   @override

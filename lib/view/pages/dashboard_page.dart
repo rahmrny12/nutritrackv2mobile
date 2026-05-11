@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:nutritrack/core/local_storage.dart';
 import 'package:nutritrack/core/route_generator.dart';
+import 'package:nutritrack/view/viewmodel/navigation_state.dart';
+import 'package:nutritrack/view/viewmodel/navigation_viewmodel.dart';
+import 'widgets/bottom_nav.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -8,9 +12,23 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with TickerProviderStateMixin {
   int _selectedDay = 5;
-  int _selectedNav = 0;
+  late TabController _tabController;
+  late NavigationViewModel _navigationViewModel;
+
+  Map<String, dynamic>? _profile;
+  Map<String, dynamic>? _user;
+
+  Future<void> _loadUser() async {
+    final data = await LocalStorage.getUser();
+    if (!mounted) return;
+
+    setState(() {
+      _user = data;
+    });
+  }
 
   static const Color _teal = Color(0xFF2ABFB0);
   static const double _expandedHeight = 420.0;
@@ -82,6 +100,12 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    _navigationViewModel = NavigationViewModel();
+    _tabController = TabController(length: 3, vsync: this);
+
+    _loadProfile();
+    _loadUser();
+
     _scrollController.addListener(() {
       final collapsed =
           _scrollController.hasClients &&
@@ -92,10 +116,37 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
+  Future<void> _loadProfile() async {
+    final data = await LocalStorage.getProfile();
+    if (!mounted) return;
+
+    setState(() {
+      _profile = data;
+    });
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
+    _navigationViewModel.dispose();
+    _tabController.dispose();
     super.dispose();
+  }
+  
+  String get _userName {
+    return _user?['name'] ?? 'Guest';
+  }
+
+  double get _userHeight {
+    return _profile?['tinggi_badan'] ?? 0;
+  }
+
+  double get _userWeight {
+    return _profile?['berat_badan'] ?? 0;
+  }
+
+  double get _userBMI {
+    return _profile?['bmi'] ?? 0;
   }
 
   @override
@@ -120,15 +171,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       _buildRingkasanCepat(),
                       const SizedBox(height: 24),
                       _buildArtikelSection(),
-                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-          _buildBottomNav(),
-        ],
+          ),],
       ),
     );
   }
@@ -161,7 +209,7 @@ class _DashboardPageState extends State<DashboardPage> {
               backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=47'),
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -170,7 +218,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(fontSize: 11, color: Colors.white70),
                   ),
                   Text(
-                    'Syahidah',
+                    _userName,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -233,7 +281,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -245,7 +293,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               Text(
-                                'Syahidah',
+                                _userName,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -254,6 +302,35 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             ],
                           ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Tinggi: $_userHeight cm",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              "Berat: $_userWeight kg",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              "BMI: $_userBMI",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                         _notificationButton(),
                       ],
@@ -997,62 +1074,28 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // ─────────────────────────────────────────
-  // BOTTOM NAV
-  // ─────────────────────────────────────────
-  Widget _buildBottomNav() {
-    final items = [
-      {'icon': Icons.home_rounded, 'label': 'Beranda'},
-      {'icon': Icons.book_outlined, 'label': 'Diary'},
-      {'icon': Icons.bar_chart, 'label': 'Progres'},
-      {'icon': Icons.person_outline, 'label': 'Profil'},
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.only(
-        top: 10,
-        bottom: MediaQuery.of(context).padding.bottom + 10,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (index) {
-          final isSelected = index == _selectedNav;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedNav = index),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  items[index]['icon'] as IconData,
-                  color: isSelected ? _teal : const Color(0xFFBBBBBB),
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  items[index]['label'] as String,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isSelected ? _teal : const Color(0xFFBBBBBB),
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
+  void _handleNavigation(int index) {
+    // Handle navigation based on the selected index
+    // index 0: Beranda (Dashboard) - already here
+    // index 1: Diary
+    // index 2: Progres
+    // index 3: Profil
+    switch (index) {
+      case 0:
+        // Already on dashboard
+        break;
+      case 1:
+        // Navigate to Diary
+        break;
+      case 2:
+        // Navigate to Progress
+        break;
+      case 3:
+        // Navigate to Profile
+        Navigator.pushNamed(context, Routes.profile);
+        break;
+      default:
+        break;
+    }
   }
 }
