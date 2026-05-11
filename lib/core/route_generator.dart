@@ -5,10 +5,14 @@ import 'package:nutritrack/view/pages/auth/register_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
+import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
+import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
 
+
 class Routes {
+  static const String history = '/history';
   static const String dashboard = '/';
   static const String auth = '/auth';
   static const String login = '/login';
@@ -38,6 +42,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const AddMealPage());
       case Routes.profile:
         return MaterialPageRoute(builder: (_) => const ProfilePage());
+      case Routes.history:
+        return MaterialPageRoute(builder: (_) => const HistoryPage());
       default:
         return _errorRoute(settings.name);
     }
