@@ -662,16 +662,21 @@ class _DashboardPageState extends State<DashboardPage>
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0F0),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.chevron_right,
-                    size: 18,
-                    color: Color(0xFF888888),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, Routes.history);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F0F0),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Color(0xFF888888),
+                    ),
                   ),
                 ),
               ],

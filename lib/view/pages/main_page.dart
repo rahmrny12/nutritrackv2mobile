@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
-import 'package:nutritrack/view/pages/diary_page.dart';
+import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
 import 'package:nutritrack/view/pages/widgets/bottom_nav.dart';
 import 'package:nutritrack/view/viewmodel/navigation_state.dart';
@@ -18,7 +18,7 @@ class _MainPageState extends State<MainPage> {
   // Define your pages here in the same order as the items list
   final List<Widget> _pages = [
     const DashboardPage(),
-    const DiaryPage(),
+    const HistoryPage(),
     const ProfilePage(),
   ];
 

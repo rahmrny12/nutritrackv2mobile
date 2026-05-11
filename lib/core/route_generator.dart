@@ -7,15 +7,19 @@ import 'package:nutritrack/view/pages/auth/register_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
+import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
 import 'package:nutritrack/view/pages/main_page.dart';
 import 'package:nutritrack/view/pages/mood_page.dart';
+import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
+
 
 class Routes {
   static const String main = '/';
   static const String dashboard = '/dashboard';
+  static const String history = '/history';
   static const String auth = '/auth';
   static const String login = '/login';
   static const String register = '/register';
@@ -58,6 +62,8 @@ class RouteGenerator {
         return _protectedRoute(const AddMealPage());
       case Routes.profile:
         return _protectedRoute(const ProfilePage());
+      case Routes.history:
+        return MaterialPageRoute(builder: (_) => const HistoryPage());
       default:
         return _errorRoute(settings.name);
     }
