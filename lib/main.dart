@@ -13,9 +13,10 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: Routes.register, 
+      initialRoute: Routes.profile, 
       onGenerateRoute: RouteGenerator.generateRoute,
     );
   }

@@ -11,7 +11,7 @@ class AppColors {
 class AppTheme {
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: 'Montserrat',
+    fontFamily: 'DMSans',
 
     colorScheme: ColorScheme(
       brightness: Brightness.light,
