@@ -22,7 +22,9 @@ class ProfileViewModel extends ValueNotifier<ProfileState> {
       final profile = await repo.updateProfile(
         tinggiBadan: double.parse(tinggiController.text),
         beratBadan: double.parse(beratController.text),
-        lingkarPinggang: lingkarController.text.isEmpty ? null : double.parse(lingkarController.text),
+        lingkarPinggang: lingkarController.text.isEmpty
+            ? null
+            : double.parse(lingkarController.text),
         usia: int.parse(usiaController.text),
         jenisKelamin: gender,
       );
@@ -31,6 +33,14 @@ class ProfileViewModel extends ValueNotifier<ProfileState> {
     } catch (e) {
       value = value.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  Future<ProfileModel> getProfile() async {
+    final profile = await repo.getProfile();
+
+    value = value.copyWith(isLoading: false, profile: profile);
+
+    return profile;
   }
 
   @override

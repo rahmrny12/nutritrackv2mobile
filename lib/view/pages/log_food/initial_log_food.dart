@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/models/ingredient_model.dart';
+import 'package:nutritrack/data/models/recipe_model.dart';
+import 'package:nutritrack/data/repository/recipe_repository.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 import 'package:nutritrack/data/repository/ingredient_repository.dart';
@@ -17,21 +19,22 @@ class InitialLogFood extends StatefulWidget {
 class _InitialLogFoodState extends State<InitialLogFood> {
   static const Color _teal = Color(0xFF2ABFB0);
 
-  int _selectedTab = 0;
   final List<String> _tabs = ['Sering Dimakan', 'Terbaru', 'Resepku'];
   late final LogFoodViewModel viewModel;
 
   @override
   void initState() {
     super.initState();
-    viewModel = LogFoodViewModel(repo: IngredientRepository(ApiService()));
+    viewModel = LogFoodViewModel(
+      ingredientRepo: IngredientRepository(ApiService()),
+      recipeRepo: RecipeRepository(ApiService()),
+    );
 
     viewModel.fetchIngredients();
   }
 
   @override
   void dispose() {
-    viewModel.dispose();
     super.dispose();
   }
 
@@ -55,7 +58,7 @@ class _InitialLogFoodState extends State<InitialLogFood> {
                       const SizedBox(height: 16),
                       _buildSearchBar(),
                       const SizedBox(height: 14),
-                      _buildTabs(),
+                      _buildTabs(state),
                       const SizedBox(height: 20),
                       _buildRecommendationHeader(),
                       const SizedBox(height: 12),
@@ -84,8 +87,7 @@ class _InitialLogFoodState extends State<InitialLogFood> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, Routes.initialLogFood),
+                onTap: () => Navigator.pop(context),
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -283,14 +285,20 @@ class _InitialLogFoodState extends State<InitialLogFood> {
   }
 
   // ── Tabs ─────────────────────────────────
-  Widget _buildTabs() {
+  Widget _buildTabs(LogFoodState state) {
+    final tabs = LogFoodTabType.values;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: List.generate(_tabs.length, (index) {
-          final isSelected = index == _selectedTab;
+        children: List.generate(tabs.length, (index) {
+          final tab = tabs[index];
+          final isSelected = state.tab == tab;
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedTab = index),
+            onTap: () {
+              viewModel.setTab(tab); // ✅ pakai enum
+            },
             child: Container(
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -335,130 +343,138 @@ class _InitialLogFoodState extends State<InitialLogFood> {
 
   // ── Food List ────────────────────────────
   Widget _buildFoodList(LogFoodState state) {
-    final ingredients = state.ingredients;
-
     if (state.error != null) {
       return Center(child: Text(state.error!));
     }
 
-    if (ingredients.isEmpty) {
-      return const Center(child: Text("Tidak ada data"));
+    final isIngredientTab = state.tab == LogFoodTabType.ingredient;
+
+    if (isIngredientTab && state.ingredients.isEmpty ||
+        !isIngredientTab && state.recipes.isEmpty) {
+      return const Center(
+        child: Text(
+          "Tidak ada data",
+          style: TextStyle(color: Color(0xFF999999)),
+        ),
+      );
     }
 
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: ingredients.length,
+      padding: EdgeInsets.zero,
+      itemCount: isIngredientTab
+          ? state.ingredients.length
+          : state.recipes.length,
       separatorBuilder: (_, __) =>
           const Divider(height: 1, color: Color(0xFFF0F0F0), indent: 72),
       itemBuilder: (context, index) {
-        final ingredient = ingredients[index];
-        final isSelected = viewModel.isFoodSelected(ingredient.id);
+        if (isIngredientTab) {
+          final ingredient = state.ingredients[index];
+
+          return _buildFoodItem(
+            name: ingredient.name,
+            subtitleLeft: '${ingredient.portion?.toInt() ?? 100}g',
+            subtitleRight: '${ingredient.totalKcal} kcal',
+            isSelected: viewModel.isFoodSelected(ingredient.id),
+            onToggle: () => viewModel.toggleSelectedFood(ingredient),
+          );
+        }
+
+        final recipe = state.recipes[index];
 
         return _buildFoodItem(
-          ingredient: ingredient,
-          isSelected: isSelected,
-          onToggle: () => viewModel.toggleSelectedFood(ingredient), // ✅ FIX
+          name: recipe.name,
+          subtitleLeft: '${recipe.ingredients.length} bahan',
+          subtitleRight: recipe.desc ?? 'Resep',
+          isSelected: viewModel.isRecipeSelected(recipe.id), // ✅ Use the correct method
+          onToggle: () => viewModel.toggleRecipe(recipe),
         );
       },
     );
   }
 
   Widget _buildFoodItem({
-    required IngredientModel ingredient,
+    required String name,
+    required String subtitleLeft,
+    required String subtitleRight,
     required bool isSelected,
     required VoidCallback onToggle,
   }) {
-    return GestureDetector(
-      onTap: onToggle,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            const SizedBox(width: 12),
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 101, 101, 101),
-                borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: onToggle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAEAEA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text("🍽️", style: const TextStyle(fontSize: 24)),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                ingredient.emoji ?? '🍽️',
-                style: const TextStyle(fontSize: 26),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Name & portion
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ingredient.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Text(
-                        '${ingredient.portion?.toInt() ?? 100}g',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF999999),
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "$subtitleLeft • $subtitleRight",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF999999),
                       ),
-                      const Text(
-                        ' • ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF999999),
-                        ),
-                      ),
-                      Text(
-                        '${ingredient.totalKcal} kcal',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2ABFB0),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Toggle button
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF2ABFB0) : Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFF2ABFB0)
-                      : const Color(0xFFDDDDDD),
-                  width: 1.5,
+                    ),
+                  ],
                 ),
               ),
-              child: Icon(
-                isSelected ? Icons.check : Icons.add,
-                size: 16,
-                color: isSelected ? Colors.white : const Color(0xFF999999),
+
+              const SizedBox(width: 10),
+
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected ? const Color(0xFF2ABFB0) : Colors.white,
+                  border: Border.all(
+                    color: isSelected
+                        ? const Color(0xFF2ABFB0)
+                        : const Color(0xFFDDDDDD),
+                  ),
+                ),
+                child: Icon(
+                  isSelected ? Icons.check : Icons.add,
+                  size: 16,
+                  color: isSelected ? Colors.white : const Color(0xFF999999),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-          ],
+
+              const SizedBox(width: 12),
+            ],
+          ),
         ),
       ),
     );
@@ -485,122 +501,96 @@ class _InitialLogFoodState extends State<InitialLogFood> {
       ),
       child: Row(
         children: [
-          // Total calories info
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Total Kalori',
-                style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                '${state.totalKcal} kcal',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+          // LEFT INFO
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Total Kalori',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF999999)),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Row(
-                children: [
-                  _MacroDot(
-                    color: const Color(0xFF2ABFB0),
-                    label: '${state.totalCarbs.toStringAsFixed(0)}g Karbo',
+                const SizedBox(height: 1),
+                Text(
+                  '${state.totalKcal} kcal',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
                   ),
-                  const SizedBox(width: 8),
-                  _MacroDot(
-                    color: const Color(0xFFFF6B6B),
-                    label: '${state.totalProtein.toStringAsFixed(0)}g Pro',
-                  ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 3),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    _MacroDot(
+                      color: const Color(0xFF2ABFB0),
+                      label: '${state.totalCarbs.toStringAsFixed(0)}g Karbo',
+                    ),
+                    _MacroDot(
+                      color: const Color(0xFFFF6B6B),
+                      label: '${state.totalProtein.toStringAsFixed(0)}g Pro',
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => showAddIngredientSheet(context, viewModel),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2ABFB0),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2ABFB0).withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+
+          const SizedBox(width: 12),
+
+          // RIGHT BUTTONS
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => showAddIngredientSheet(context, viewModel),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2ABFB0),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Tambah Bahan',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.add, color: Colors.white),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 12),
-              GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, Routes.confirmLogFood),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2ABFB0),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2ABFB0).withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  flex: 2,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      Routes.confirmLogFood,
+                      arguments: viewModel,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2ABFB0),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
+                      alignment: Alignment.center,
+                      child: Text(
                         'Selesai (${state.totalItems})',
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1020,7 +1010,7 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final ingredient = IngredientModel(
@@ -1033,9 +1023,9 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
       portion: 100,
     );
 
-    // 👉 nanti bisa kirim ke API atau ViewModel
-    widget.viewModel.addSelectedFood(ingredient);
+    await widget.viewModel.createIngredient(ingredient);
 
+    if (!mounted) return;
     Navigator.pop(context);
   }
 }

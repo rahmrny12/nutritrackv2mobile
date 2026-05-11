@@ -7,6 +7,13 @@ class ProfileRepository {
 
   ProfileRepository(this.api);
 
+  Future<ProfileModel> getProfile() async {
+    final response = await api.get('/profile');
+
+    final profileJson = response['data'] ?? response;
+    return ProfileModel.fromJson(profileJson);
+  }
+
   Future<ProfileModel> updateProfile({
     required double tinggiBadan,
     required double beratBadan,
@@ -22,7 +29,7 @@ class ProfileRepository {
       "jenis_kelamin": jenisKelamin,
     });
 
-    final profileJson = response['profile'] ?? response;
+    final profileJson = response['data'] ?? response;
 
     final profile = ProfileModel.fromJson(profileJson);
 

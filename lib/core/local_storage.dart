@@ -6,6 +6,11 @@ class LocalStorage {
   static const _profileKey = 'user_profile';
   static const _userKey = 'user_data';
 
+  static Future<bool> isLoggedIn() async {
+    final token = await getToken();
+    return token != null && token.isNotEmpty;
+  }
+
   static Future<void> saveUser(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, jsonEncode(user));
@@ -44,7 +49,9 @@ class LocalStorage {
 
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.remove(_key);
     await prefs.remove(_profileKey);
+    await prefs.remove(_userKey);
   }
 }

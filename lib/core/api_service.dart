@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:nutritrack/core/local_storage.dart';
 
 class ApiService {
-  final String baseUrl = "http://localhost:8000/api";
+  final String baseUrl = "http://192.168.1.7:8000/api";
 
   // 🔹 COMMON HEADER
   Map<String, String> _headers({String? token}) {

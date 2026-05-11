@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:nutritrack/core/local_storage.dart';
-import 'package:nutritrack/core/route_generator.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class DiaryPage extends StatefulWidget {
+  const DiaryPage({super.key});
 
   @override
-  State<ProfilePage> createState() => ProfilePageState();
+  State<DiaryPage> createState() => DiaryPageState();
 }
 
-class ProfilePageState extends State<ProfilePage> {
+class DiaryPageState extends State<DiaryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profile"), centerTitle: true),
+      appBar: AppBar(
+        title: const Text("Profile"),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           const SizedBox(height: 20),
@@ -21,9 +22,7 @@ class ProfilePageState extends State<ProfilePage> {
           // Foto profil
           const CircleAvatar(
             radius: 50,
-            backgroundImage: AssetImage(
-              'assets/profile.jpg',
-            ), // ganti sesuai gambar kamu
+            backgroundImage: AssetImage('assets/profile.jpg'), // ganti sesuai gambar kamu
           ),
 
           const SizedBox(height: 15),
@@ -37,7 +36,10 @@ class ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 5),
 
           // Email
-          const Text("email@gmail.com", style: TextStyle(color: Colors.grey)),
+          const Text(
+            "email@gmail.com",
+            style: TextStyle(color: Colors.grey),
+          ),
 
           const SizedBox(height: 30),
 
@@ -55,17 +57,7 @@ class ProfilePageState extends State<ProfilePage> {
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text("Logout"),
-            onTap: () async {
-              await LocalStorage.clear();
-
-              if (!context.mounted) return;
-
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                Routes.auth,
-                (route) => false,
-              );
-            },
+            onTap: () {},
           ),
         ],
       ),

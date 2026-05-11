@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nutritrack/core/local_storage.dart';
 import 'package:nutritrack/view/pages/auth/auth_page.dart';
 import 'package:nutritrack/view/pages/auth/bmi_page.dart';
 import 'package:nutritrack/view/pages/auth/login_page.dart';
@@ -7,10 +8,13 @@ import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
+import 'package:nutritrack/view/pages/main_page.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
+import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 
 class Routes {
-  static const String dashboard = '/';
+  static const String main = '/';
+  static const String dashboard = '/dashboard';
   static const String auth = '/auth';
   static const String login = '/login';
   static const String register = '/register';
@@ -24,6 +28,8 @@ class Routes {
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case Routes.main:
+        return MaterialPageRoute(builder: (_) => const AuthCheckPage());
       case Routes.auth:
         return MaterialPageRoute(builder: (_) => const AuthPage());
       case Routes.login:
@@ -33,18 +39,45 @@ class RouteGenerator {
       case Routes.bmi:
         return MaterialPageRoute(builder: (_) => const BMIPage());
       case Routes.dashboard:
-        return MaterialPageRoute(builder: (_) => const DashboardPage());
+        return _protectedRoute(const DashboardPage());
       case Routes.confirmLogFood:
-        return MaterialPageRoute(builder: (_) => const ConfirmLogFood());
+        final args = settings.arguments;
+
+        if (args is! LogFoodViewModel) {
+          return _errorRoute('Invalid or missing LogFoodViewModel');
+        }
+
+        return _protectedRoute(ConfirmLogFood(viewModel: args));
       case Routes.initialLogFood:
-        return MaterialPageRoute(builder: (_) => const InitialLogFood());
+        return _protectedRoute(const InitialLogFood());
       case Routes.addMeal:
-        return MaterialPageRoute(builder: (_) => const AddMealPage());
+        return _protectedRoute(const AddMealPage());
       case Routes.profile:
-        return MaterialPageRoute(builder: (_) => const ProfilePage());
+        return _protectedRoute(const ProfilePage());
       default:
         return _errorRoute(settings.name);
     }
+  }
+
+  static Route<dynamic> _protectedRoute(Widget page) {
+    return MaterialPageRoute(
+      builder: (_) => FutureBuilder<bool>(
+        future: LocalStorage.isLoggedIn(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (snapshot.hasData && snapshot.data == true) {
+            return page;
+          }
+
+          return const AuthPage();
+        },
+      ),
+    );
   }
 
   static Route<dynamic> _errorRoute(String? routeName) {
@@ -55,6 +88,30 @@ class RouteGenerator {
           child: Text('Halaman untuk route "$routeName" tidak ditemukan.'),
         ),
       ),
+    );
+  }
+}
+
+class AuthCheckPage extends StatelessWidget {
+  const AuthCheckPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: LocalStorage.isLoggedIn(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasData && snapshot.data == true) {
+          return MainPage();
+        }
+
+        return const AuthPage();
+      },
     );
   }
 }

@@ -5,7 +5,7 @@ import 'package:nutritrack/view/viewmodel/auth_state.dart';
 class AuthViewModel extends ValueNotifier<AuthState> {
   final AuthRepository repo;
 
-  AuthViewModel(this.repo) : super(AuthState());
+  AuthViewModel({required this.repo}) : super(AuthState());
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
@@ -22,18 +22,12 @@ class AuthViewModel extends ValueNotifier<AuthState> {
         passwordController.text,
       );
 
-      value = value.copyWith(
-        isLoading: false,
-        user: user,
-      );
+      value = value.copyWith(isLoading: false, user: user);
     } catch (e) {
-      value = value.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      
+      value = value.copyWith(isLoading: false, error: e.toString());
     }
   }
+
   Future<void> register() async {
     value = value.copyWith(isLoading: true, error: null);
 
@@ -46,16 +40,9 @@ class AuthViewModel extends ValueNotifier<AuthState> {
         passwordConfirmation: passwordConfirmController.text,
       );
 
-      value = value.copyWith(
-        isLoading: false,
-        user: user,
-      );
+      value = value.copyWith(isLoading: false, user: user);
     } catch (e) {
-      value = value.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      value = value.copyWith(isLoading: false, error: e.toString());
     }
   }
 }
-

@@ -26,7 +26,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    viewModel = AuthViewModel(AuthRepository(ApiService()));
+    viewModel = AuthViewModel(repo: AuthRepository(ApiService()));
 
     _animController = AnimationController(
       vsync: this,

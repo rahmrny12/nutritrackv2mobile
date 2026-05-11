@@ -7,6 +7,9 @@ class ProfileModel {
   final int? usia;
   final String? jenisKelamin;
 
+  final double? lingkarPinggang;
+  final double? lingkarPinggul;
+
   ProfileModel({
     this.id,
     this.userId,
@@ -15,6 +18,8 @@ class ProfileModel {
     this.bmi,
     this.usia,
     this.jenisKelamin,
+    this.lingkarPinggang,
+    this.lingkarPinggul,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +31,9 @@ class ProfileModel {
       bmi: _toDouble(json['bmi']),
       usia: json['usia'],
       jenisKelamin: json['jenis_kelamin'],
+
+      lingkarPinggang: _toDouble(json['lingkar_pinggang']),
+      lingkarPinggul: _toDouble(json['lingkar_pinggul']),
     );
   }
 
@@ -38,6 +46,8 @@ class ProfileModel {
       "bmi": bmi,
       "usia": usia,
       "jenis_kelamin": jenisKelamin,
+      "lingkar_pinggang": lingkarPinggang,
+      "lingkar_pinggul": lingkarPinggul,
     };
   }
 

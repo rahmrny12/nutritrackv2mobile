@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/core/api_service.dart';
 import 'package:nutritrack/data/repository/ingredient_repository.dart';
+import 'package:nutritrack/data/repository/recipe_repository.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 
 class ConfirmLogFood extends StatefulWidget {
-  const ConfirmLogFood({super.key});
+  final LogFoodViewModel viewModel;
+
+  const ConfirmLogFood({super.key, required this.viewModel});
 
   @override
   State<ConfirmLogFood> createState() => _ConfirmLogFoodState();
@@ -21,7 +24,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
   void initState() {
     super.initState();
     // Menggunakan global singleton instance
-    _viewModel = LogFoodViewModel(repo: IngredientRepository(ApiService()));
+    _viewModel = widget.viewModel;
   }
 
   @override
@@ -49,6 +52,8 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildActionToSaveMealBanner(),
+                      const SizedBox(height: 24),
+                      _buildRecipeList(state),
                       const SizedBox(height: 24),
                       _buildIngredientList(state),
                       const SizedBox(height: 24),
@@ -180,6 +185,107 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
     );
   }
 
+  Widget _buildRecipeList(LogFoodState state) {
+    if (state.selectedRecipes.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Text(
+          'Belum ada resep dipilih',
+          style: TextStyle(color: Color(0xFF999999), fontSize: 13),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Resep yang dipilih',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        ...state.selectedRecipes.map((recipe) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // ICON / EMOJI
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '🍽️',
+                    style: const TextStyle(fontSize: 26),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // TEXT INFO
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        recipe.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        '${recipe.ingredients.length} bahan',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildIngredientList(LogFoodState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,8 +336,10 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Text(ingredient.emoji ?? '🍽️',
-                style: const TextStyle(fontSize: 26)),
+            child: Text(
+              ingredient.emoji ?? '🍽️',
+              style: const TextStyle(fontSize: 26),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -257,8 +365,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
                   children: [
                     _MetaChip(
                       icon: Icons.scale,
-                      label:
-                          '${ingredient.portion?.toInt() ?? 100}g',
+                      label: '${ingredient.portion?.toInt() ?? 100}g',
                       color: const Color(0xFF999999),
                     ),
                     const SizedBox(width: 16),

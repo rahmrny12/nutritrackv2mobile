@@ -12,17 +12,14 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with TickerProviderStateMixin {
   int _selectedDay = 5;
-  NavigationViewModel? _navigationViewModel;
+  late TabController _tabController;
+  late NavigationViewModel _navigationViewModel;
 
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _user;
-
-  NavigationViewModel get _navViewModel {
-    _navigationViewModel ??= NavigationViewModel();
-    return _navigationViewModel!;
-  }
 
   Future<void> _loadUser() async {
     final data = await LocalStorage.getUser();
@@ -103,6 +100,9 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    _navigationViewModel = NavigationViewModel();
+    _tabController = TabController(length: 3, vsync: this);
+
     _loadProfile();
     _loadUser();
 
@@ -128,10 +128,11 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _navigationViewModel?.dispose();
+    _navigationViewModel.dispose();
+    _tabController.dispose();
     super.dispose();
   }
-
+  
   String get _userName {
     return _user?['name'] ?? 'Guest';
   }
@@ -170,27 +171,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       _buildRingkasanCepat(),
                       const SizedBox(height: 24),
                       _buildArtikelSection(),
-                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-          ValueListenableBuilder<NavigationState>(
-            valueListenable: _navViewModel,
-            builder: (context, state, _) {
-              return BottomNav(
-                selectedIndex: state.selectedIndex,
-                onIndexChanged: (index) {
-                  _navViewModel.selectIndex(index);
-                  // Handle navigation to different pages here if needed
-                  _handleNavigation(index);
-                },
-              );
-            },
-          ),
-        ],
+          ),],
       ),
     );
   }
@@ -1113,4 +1099,3 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 }
-

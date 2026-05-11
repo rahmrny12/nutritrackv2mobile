@@ -15,7 +15,6 @@ class BottomNav extends StatelessWidget {
   final items = const [
     {'icon': Icons.home_rounded, 'label': 'Beranda'},
     {'icon': Icons.book_outlined, 'label': 'Diary'},
-    {'icon': Icons.bar_chart, 'label': 'Progres'},
     {'icon': Icons.person_outline, 'label': 'Profil'},
   ];
 

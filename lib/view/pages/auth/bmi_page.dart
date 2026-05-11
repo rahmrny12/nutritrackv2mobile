@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:nutritrack/data/repository/profile_repository.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/view/pages/main_page.dart';
 import 'package:nutritrack/view/viewmodel/profile_view_model.dart';
 
 class BMIPage extends StatefulWidget {
@@ -19,6 +20,22 @@ class _BMIPageState extends State<BMIPage> {
   void initState() {
     super.initState();
     viewModel = ProfileViewModel(ProfileRepository(ApiService()));
+
+    viewModel.getProfile();
+
+    viewModel.addListener(() {
+      final profile = viewModel.value.profile;
+      if (profile == null) return;
+
+      _bbController.text = profile.beratBadan?.toString() ?? '';
+      _tbController.text = profile.tinggiBadan?.toString() ?? '';
+      _usiaController.text = profile.usia?.toString() ?? '';
+      _lingkarController.text = profile.lingkarPinggang?.toString() ?? '';
+
+      _selectedGender = profile.jenisKelamin == 'P' ? 'perempuan' : 'laki';
+
+      setState(() {});
+    });
   }
 
   final _bbController = TextEditingController();
@@ -77,7 +94,7 @@ class _BMIPageState extends State<BMIPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
+        MaterialPageRoute(builder: (context) => MainPage()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
