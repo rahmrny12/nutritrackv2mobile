@@ -132,7 +132,7 @@ class _DashboardPageState extends State<DashboardPage>
     _tabController.dispose();
     super.dispose();
   }
-  
+
   String get _userName {
     return _user?['name'] ?? 'Guest';
   }
@@ -176,7 +176,8 @@ class _DashboardPageState extends State<DashboardPage>
                 ),
               ],
             ),
-          ),],
+          ),
+        ],
       ),
     );
   }
@@ -566,16 +567,20 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: Color(0xFF888888),
+              GestureDetector(
+                onTap: () =>
+                    Navigator.pushNamed(context, Routes.mood),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F0F0),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: Color(0xFF888888),
+                  ),
                 ),
               ),
             ],

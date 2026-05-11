@@ -1,4 +1,4 @@
-import 'mood_tracker_pack.dart';
+import 'view/pages/mood_page.dart';
 import 'package:flutter/material.dart';
 
 import 'core/app_theme.dart';

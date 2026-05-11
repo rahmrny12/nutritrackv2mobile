@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-class MoodTrackerPage extends StatefulWidget {
-  const MoodTrackerPage({super.key});
+class MoodPage extends StatefulWidget {
+  const MoodPage({super.key});
 
   @override
-  State<MoodTrackerPage> createState() => _MoodTrackerPageState();
+  State<MoodPage> createState() => _MoodPageState();
 }
 
-class _MoodTrackerPageState extends State<MoodTrackerPage> {
+class _MoodPageState extends State<MoodPage> {
   double stressLevel = 4.0;
   String selectedEnergy = 'Normal';
 
