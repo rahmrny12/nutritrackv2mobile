@@ -6,6 +6,7 @@ import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
+import 'package:nutritrack/view/pages/chatbot/chatbot.dart';
 
 class Routes {
   static const String auth = '/auth';
@@ -15,6 +16,7 @@ class Routes {
   static const String initialLogFood = '/initial-log-food';
   static const String profile = '/profile';
   static const String register = '/register';
+  static const String chatbot = '/chatbot';
 
 }
 
@@ -35,8 +37,11 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const ProfilePage());
       case Routes.register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
+      case Routes.chatbot:
+        return MaterialPageRoute(builder: (_) => const ChatbotPage());
       default:
         return _errorRoute(settings.name);
+
     }
   }
 
