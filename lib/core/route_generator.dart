@@ -4,6 +4,7 @@ import 'package:nutritrack/view/pages/auth/auth_page.dart';
 import 'package:nutritrack/view/pages/auth/bmi_page.dart';
 import 'package:nutritrack/view/pages/auth/login_page.dart';
 import 'package:nutritrack/view/pages/auth/register_page.dart';
+import 'package:nutritrack/view/pages/auth/verify_otp_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
@@ -23,6 +24,7 @@ class Routes {
   static const String auth = '/auth';
   static const String login = '/login';
   static const String register = '/register';
+  static const String verifyOtp = '/verify-otp';
   static const String confirmLogFood = '/confirm-log-food';
   static const String initialLogFood = '/initial-log-food';
   static const String addMeal = '/add-meal';
@@ -42,6 +44,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case Routes.register:
         return MaterialPageRoute(builder: (_) => const RegisterPage());
+      case Routes.verifyOtp:
+        return MaterialPageRoute(builder: (_) => const VerifyOtpPage());
       case Routes.bmi:
         return MaterialPageRoute(builder: (_) => const BMIPage());
       case Routes.mood:

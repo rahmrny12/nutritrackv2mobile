@@ -13,6 +13,7 @@ class LogFoodState {
 
   final bool isLoading;
   final String? error;
+  final String? message;
 
   LogFoodState({
     this.isLoading = false,
@@ -22,6 +23,7 @@ class LogFoodState {
     this.selectedRecipes = const [],
     this.tab = LogFoodTabType.ingredient, // default tab
     this.error,
+    this.message,
   });
 
   /// TOTAL NUTRITION
@@ -47,6 +49,7 @@ class LogFoodState {
     LogFoodTabType? tab, // ✅ ADD THIS
     bool? isLoading,
     String? error,
+    String? message,
   }) {
     return LogFoodState(
       ingredients: ingredients ?? this.ingredients,
@@ -56,6 +59,7 @@ class LogFoodState {
       tab: tab ?? this.tab,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
+      message: message ?? this.message,
     );
   }
 }

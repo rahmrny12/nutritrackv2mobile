@@ -57,7 +57,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           );
 
-          Navigator.pushNamed(context, Routes.auth);
+          Navigator.pushNamed(context, Routes.verifyOtp);
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:nutritrack/core/api_service.dart';
-import 'package:nutritrack/data/repository/ingredient_repository.dart';
-import 'package:nutritrack/data/repository/recipe_repository.dart';
+import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 
 class ConfirmLogFood extends StatefulWidget {
   final LogFoodViewModel viewModel;
+  final String mealType;
 
-  const ConfirmLogFood({super.key, required this.viewModel});
+  const ConfirmLogFood({
+    super.key,
+    required this.viewModel,
+    this.mealType = 'Lunch',
+  });
 
   @override
   State<ConfirmLogFood> createState() => _ConfirmLogFoodState();
@@ -34,6 +37,38 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
     super.dispose();
   }
 
+  Future<void> _saveLogFood() async {
+    if (_viewModel.value.selectedFoods.isEmpty &&
+        _viewModel.value.selectedRecipes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih makanan terlebih dahulu.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final success = await _viewModel.saveMealLog(mealType: widget.mealType);
+
+    if (!mounted) return;
+
+    if (success) {
+      _viewModel.clearState();
+      Navigator.pushNamedAndRemoveUntil(context, Routes.main, (_) => false);
+      return;
+    }
+
+    if (_viewModel.value.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_viewModel.value.error!),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<LogFoodState>(
@@ -55,7 +90,9 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
                       const SizedBox(height: 24),
                       _buildRecipeList(state),
                       const SizedBox(height: 24),
-                      _buildIngredientList(state),
+                      state.selectedFoods.isEmpty
+                          ? SizedBox()
+                          : _buildIngredientList(state),
                       const SizedBox(height: 24),
                       _buildRingkasanGizi(state),
                       const SizedBox(height: 100),
@@ -63,7 +100,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
                   ),
                 ),
               ),
-              _buildSimpanButton(),
+              _buildSimpanButton(state),
             ],
           ),
         );
@@ -240,10 +277,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    '🍽️',
-                    style: const TextStyle(fontSize: 26),
-                  ),
+                  child: Text('🍽️', style: const TextStyle(fontSize: 26)),
                 ),
 
                 const SizedBox(width: 12),
@@ -447,7 +481,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
   }
 
   // ── Simpan Button ────────────────────────
-  Widget _buildSimpanButton() {
+  Widget _buildSimpanButton(LogFoodState state) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -459,7 +493,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
       child: SizedBox(
         width: double.infinity,
         child: GestureDetector(
-          onTap: () {},
+          onTap: state.isLoading ? null : _saveLogFood,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
@@ -474,14 +508,23 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
               ],
             ),
             alignment: Alignment.center,
-            child: const Text(
-              'Simpan',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            child: state.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Simpan',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
           ),
         ),
       ),

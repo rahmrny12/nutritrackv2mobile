@@ -7,11 +7,21 @@ class ProfileRepository {
 
   ProfileRepository(this.api);
 
-  Future<ProfileModel> getProfile() async {
+  Future<ProfileModel?> getProfile() async {
     final response = await api.get('/profile');
 
-    final profileJson = response['data'] ?? response;
-    return ProfileModel.fromJson(profileJson);
+    final statusCode = response['statusCode'];
+    final data = response['data'];
+
+    if (data == null || statusCode == 404) {
+      return null;
+    }
+
+    if (statusCode != 200) {
+      throw Exception(data['message'] ?? "Failed to load profile");
+    }
+
+    return ProfileModel.fromJson(data);
   }
 
   Future<ProfileModel> updateProfile({

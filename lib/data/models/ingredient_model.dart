@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class IngredientModel {
   final int id;
   final String name;
@@ -7,6 +9,7 @@ class IngredientModel {
   final double fat;
   final String? emoji;
   final double? portion; // dalam gram
+  final String? image; // optional field
 
   IngredientModel({
     required this.id,
@@ -17,6 +20,7 @@ class IngredientModel {
     required this.fat,
     this.emoji,
     this.portion,
+    this.image,
   });
 
   /// Hitung total kalori berdasarkan portion
@@ -47,10 +51,13 @@ class IngredientModel {
     return IngredientModel(
       id: json['id'] as int,
       name: json['name'] as String,
-      caloriesPer100g: (json['calories_per_100g'] as num).toDouble(),
-      protein: (json['protein'] as num).toDouble(),
-      carbs: (json['carbs'] as num).toDouble(),
-      fat: (json['fat'] as num).toDouble(),
+
+      caloriesPer100g: double.parse(json['calories_per_100g'].toString()),
+      protein: double.parse(json['protein'].toString()),
+      carbs: double.parse(json['carbs'].toString()),
+      fat: double.parse(json['fat'].toString()),
+
+      image: json['image'] as String?, // ✅ ADD THIS
     );
   }
 
@@ -62,6 +69,7 @@ class IngredientModel {
       'protein': protein,
       'carbs': carbs,
       'fat': fat,
+      'image': image,
     };
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:nutritrack/core/api_service.dart';
 import 'package:nutritrack/data/models/ingredient_model.dart';
 
@@ -12,13 +14,21 @@ class IngredientRepository {
       query: {if (type != null) 'type': type},
     );
 
-    return (res as List).map((e) => IngredientModel.fromJson(e)).toList();
+    if (res['statusCode'] != 200) {
+      throw Exception(res['message'] ?? 'Data meal tidak ditemukan');
+    }
+
+    final List data = res['data'] ?? res;
+
+    return data.map((json) => IngredientModel.fromJson(json)).toList();
   }
 
   Future<List<IngredientModel>> searchIngredients(String query) async {
-    final response = await api.get('/ingredients', query: {'search': query});
+    final res = await api.get('/ingredients', query: {'search': query});
 
-    return (response as List).map((e) => IngredientModel.fromJson(e)).toList();
+    final List data = res['data'] ?? res;
+
+    return data.map((json) => IngredientModel.fromJson(json)).toList();
   }
 
   Future<IngredientModel> createIngredient({
@@ -27,17 +37,20 @@ class IngredientRepository {
     required double protein,
     required double carbs,
     required double fat,
+    File? imageFile,
   }) async {
-    final response = await api.post('/ingredients', {
-      "name": name,
-      "calories_per_100g": calories,
-      "protein": protein,
-      "carbs": carbs,
-      "fat": fat,
-    });
+    final res = await api.postMultipart(
+      '/ingredients',
+      fields: {
+        "name": name,
+        "calories_per_100g": calories.toString(),
+        "protein": protein.toString(),
+        "carbs": carbs.toString(),
+        "fat": fat.toString(),
+      },
+      files: imageFile != null ? {"image": imageFile} : null,
+    );
 
-    final data = response['data']; // 👈 penting sesuai API kamu
-
-    return IngredientModel.fromJson(data);
+    return IngredientModel.fromJson(res['data']);
   }
 }

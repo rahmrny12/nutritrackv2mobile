@@ -4,6 +4,7 @@ import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/models/ingredient_model.dart';
 import 'package:nutritrack/data/models/recipe_model.dart';
 import 'package:nutritrack/data/repository/recipe_repository.dart';
+import 'package:nutritrack/data/repository/meal_log_repository.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 import 'package:nutritrack/data/repository/ingredient_repository.dart';
@@ -19,7 +20,7 @@ class InitialLogFood extends StatefulWidget {
 class _InitialLogFoodState extends State<InitialLogFood> {
   static const Color _teal = Color(0xFF2ABFB0);
 
-  final List<String> _tabs = ['Sering Dimakan', 'Terbaru', 'Resepku'];
+  final List<String> _tabs = ['Sering Dimakan', 'Menu Favoritku'];
   late final LogFoodViewModel viewModel;
 
   @override
@@ -28,6 +29,7 @@ class _InitialLogFoodState extends State<InitialLogFood> {
     viewModel = LogFoodViewModel(
       ingredientRepo: IngredientRepository(ApiService()),
       recipeRepo: RecipeRepository(ApiService()),
+      mealLogRepo: MealLogRepository(ApiService()),
     );
 
     viewModel.fetchIngredients();
@@ -60,7 +62,7 @@ class _InitialLogFoodState extends State<InitialLogFood> {
                       const SizedBox(height: 14),
                       _buildTabs(state),
                       const SizedBox(height: 20),
-                      _buildRecommendationHeader(),
+                      _buildRecommendationHeader(state),
                       const SizedBox(height: 12),
                       _buildFoodList(state),
                       const SizedBox(height: 100),
@@ -327,26 +329,93 @@ class _InitialLogFoodState extends State<InitialLogFood> {
   }
 
   // ── Recommendation Header ────────────────
-  Widget _buildRecommendationHeader() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        'Rekomendasi untukmu',
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF1A1A1A),
-        ),
+  Widget _buildRecommendationHeader(LogFoodState state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🔴 ERROR CARD
+          if (state.error != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE57373)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFD32F2F),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      state.error!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFD32F2F),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (state.message != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF66BB6A)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: Color(0xFF2E7D32),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      state.message!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF2E7D32),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // 🟢 TITLE
+          const Text(
+            'Rekomendasi untukmu',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   // ── Food List ────────────────────────────
   Widget _buildFoodList(LogFoodState state) {
-    if (state.error != null) {
-      return Center(child: Text(state.error!));
-    }
-
     final isIngredientTab = state.tab == LogFoodTabType.ingredient;
 
     if (isIngredientTab && state.ingredients.isEmpty ||
@@ -377,6 +446,7 @@ class _InitialLogFoodState extends State<InitialLogFood> {
             subtitleLeft: '${ingredient.portion?.toInt() ?? 100}g',
             subtitleRight: '${ingredient.totalKcal} kcal',
             isSelected: viewModel.isFoodSelected(ingredient.id),
+            image: ingredient.image,
             onToggle: () => viewModel.toggleSelectedFood(ingredient),
           );
         }
@@ -387,7 +457,9 @@ class _InitialLogFoodState extends State<InitialLogFood> {
           name: recipe.name,
           subtitleLeft: '${recipe.ingredients.length} bahan',
           subtitleRight: recipe.desc ?? 'Resep',
-          isSelected: viewModel.isRecipeSelected(recipe.id), // ✅ Use the correct method
+          isSelected: viewModel.isRecipeSelected(
+            recipe.id,
+          ), // ✅ Use the correct method
           onToggle: () => viewModel.toggleRecipe(recipe),
         );
       },
@@ -400,6 +472,7 @@ class _InitialLogFoodState extends State<InitialLogFood> {
     required String subtitleRight,
     required bool isSelected,
     required VoidCallback onToggle,
+    String? image,
   }) {
     return Material(
       color: Colors.white,
@@ -419,7 +492,19 @@ class _InitialLogFoodState extends State<InitialLogFood> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: Text("🍽️", style: const TextStyle(fontSize: 24)),
+                clipBehavior: Clip.antiAlias, // biar image tidak keluar border
+                child: (image != null && image!.isNotEmpty)
+                    ? Image.network(
+                        image!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Text(
+                            "🍽️",
+                            style: TextStyle(fontSize: 24),
+                          );
+                        },
+                      )
+                    : const Text("🍽️", style: TextStyle(fontSize: 24)),
               ),
 
               const SizedBox(width: 12),
@@ -766,78 +851,83 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
       minChildSize: 0.5,
       maxChildSize: 1,
       builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            children: [
-              _buildHandle(),
-              _buildHeader(),
-              const Divider(height: 1),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                _buildHandle(),
+                _buildHeader(),
 
-              Expanded(
-                child: Form(
-                  key: _formKey,
-                  child: ListView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      _buildPhotoInput(),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        _buildPhotoInput(),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      _buildTextField(
-                        controller: _nameController,
-                        label: 'Nama Bahan',
-                        hint: 'Contoh: Nasi Putih',
-                      ),
+                        _buildTextField(
+                          controller: _nameController,
+                          label: 'Nama Bahan',
+                          hint: 'Contoh: Nasi Putih',
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      _buildNumberField(
-                        controller: _caloriesController,
-                        label: 'Kalori (per 100g)',
-                      ),
+                        _buildNumberField(
+                          controller: _caloriesController,
+                          label: 'Kalori (per 100g)',
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildNumberField(
-                              controller: _proteinController,
-                              label: 'Protein (g)',
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildNumberField(
+                                controller: _proteinController,
+                                label: 'Protein (g)',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildNumberField(
-                              controller: _carbsController,
-                              label: 'Karbo (g)',
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildNumberField(
+                                controller: _carbsController,
+                                label: 'Karbo (g)',
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      _buildNumberField(
-                        controller: _fatController,
-                        label: 'Lemak (g)',
-                      ),
+                        _buildNumberField(
+                          controller: _fatController,
+                          label: 'Lemak (g)',
+                          lastInRow: true,
+                        ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      _buildPreviewCard(),
-                    ],
+                        _buildPreviewCard(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              _buildSubmitButton(),
-            ],
+                _buildSubmitButton(),
+              ],
+            ),
           ),
         );
       },
@@ -889,6 +979,7 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
+          textInputAction: TextInputAction.next,
           validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
           decoration: InputDecoration(
             hintText: hint,
@@ -908,6 +999,7 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
   Widget _buildNumberField({
     required TextEditingController controller,
     required String label,
+    bool lastInRow = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -916,7 +1008,13 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
+          textInputAction: lastInRow
+              ? TextInputAction.done
+              : TextInputAction.next,
           keyboardType: TextInputType.number,
+          scrollPadding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom - 24,
+          ),
           validator: (v) {
             if (v == null || v.isEmpty) return 'Wajib';
             if (double.tryParse(v) == null) return 'Angka';
@@ -1021,9 +1119,10 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
       carbs: double.parse(_carbsController.text),
       fat: double.parse(_fatController.text),
       portion: 100,
+      image: _imageFile?.path, // optional field
     );
 
-    await widget.viewModel.createIngredient(ingredient);
+    await widget.viewModel.createIngredient(ingredient, imageFile: _imageFile);
 
     if (!mounted) return;
     Navigator.pop(context);

@@ -1,18 +1,25 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:nutritrack/data/models/ingredient_model.dart';
 import 'package:nutritrack/data/models/recipe_model.dart';
 import 'package:nutritrack/data/repository/ingredient_repository.dart';
+import 'package:nutritrack/data/repository/meal_log_repository.dart';
 import 'package:nutritrack/data/repository/recipe_repository.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 
 class LogFoodViewModel extends ValueNotifier<LogFoodState> {
   final IngredientRepository ingredientRepo;
   final RecipeRepository recipeRepo;
+  final MealLogRepository mealLogRepo;
 
-  LogFoodViewModel({required this.ingredientRepo, required this.recipeRepo})
-    : super(LogFoodState());
+  LogFoodViewModel({
+    required this.ingredientRepo,
+    required this.recipeRepo,
+    required this.mealLogRepo,
+  }) : super(LogFoodState());
 
   Future<void> fetchIngredients() async {
     value = value.copyWith(isLoading: true, error: null);
@@ -38,7 +45,10 @@ class LogFoodViewModel extends ValueNotifier<LogFoodState> {
     }
   }
 
-  Future<void> createIngredient(IngredientModel ingredient) async {
+  Future<void> createIngredient(
+    IngredientModel ingredient, {
+    File? imageFile,
+  }) async {
     value = value.copyWith(isLoading: true, error: null);
 
     try {
@@ -48,11 +58,14 @@ class LogFoodViewModel extends ValueNotifier<LogFoodState> {
         protein: ingredient.protein,
         carbs: ingredient.carbs,
         fat: ingredient.fat,
+        imageFile: imageFile,
       );
 
       value = value.copyWith(
         isLoading: false,
         ingredients: [newIngredient, ...value.ingredients],
+        message: "Makanan berhasil ditambahkan",
+        error: null,
       );
     } catch (e) {
       value = value.copyWith(isLoading: false, error: e.toString());
@@ -145,6 +158,65 @@ class LogFoodViewModel extends ValueNotifier<LogFoodState> {
         selectedRecipes: [...value.selectedRecipes, recipe],
       );
     }
+  }
+
+  Future<bool> saveMealLog({String mealType = 'Lunch'}) async {
+    value = value.copyWith(isLoading: true, error: null, message: null);
+
+    if (value.selectedFoods.isEmpty && value.selectedRecipes.isEmpty) {
+      value = value.copyWith(
+        isLoading: false,
+        error: 'Pilih makanan dulu sebelum menyimpan.',
+      );
+      return false;
+    }
+
+    try {
+      final mealLogResponse = await mealLogRepo.createMealLog(mealType: mealType);
+      final mealLogId = mealLogResponse['data']?['id'];
+
+      if (mealLogId == null) {
+        throw Exception('Meal log tidak berhasil dibuat.');
+      }
+
+      for (final food in value.selectedFoods) {
+        await mealLogRepo.addFood(
+          mealLogId: mealLogId as int,
+          type: 'ingredient',
+          ingredientId: food.id,
+          quantity: food.portion?.toInt() ?? 1,
+        );
+      }
+
+      for (final recipe in value.selectedRecipes) {
+        await mealLogRepo.addFood(
+          mealLogId: mealLogId as int,
+          type: 'recipe',
+          recipeId: recipe.id,
+          quantity: 1,
+        );
+      }
+
+      value = value.copyWith(
+        isLoading: false,
+        message: 'Log makanan berhasil disimpan.',
+        error: null,
+      );
+      return true;
+    } catch (e) {
+      value = value.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
+  void clearState() {
+    value = value.copyWith(
+      selectedFoods: [],
+      selectedRecipes: [],
+      error: null,
+      message: null,
+      isLoading: false,
+    );
   }
 
   void toggleRecipe(RecipeModel recipe) {

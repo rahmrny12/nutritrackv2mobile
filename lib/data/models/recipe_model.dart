@@ -33,9 +33,13 @@ class RecipeModel {
       desc: json['desc'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
-      ingredients: (json['ingredients'] as List)
-          .map((e) => RecipeIngredientModel.fromJson(e))
-          .toList(),
+
+      // FIX
+      ingredients:
+          (json['ingredients'] as List<dynamic>?)
+              ?.map((e) => RecipeIngredientModel.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

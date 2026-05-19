@@ -1,42 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/data/models/meal_log_model.dart';
+import 'package:nutritrack/data/repository/meal_log_repository.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'History',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: const Color(0xFFF2FAF9),
-      ),
-      home: const HistoryPage(),
-    );
-  }
-}
-
-// ── Model ────────────────────────────────────────────────────────────────────
-class FoodItem {
-  final String emoji;
-  final String name;
-  final String portion;
-  final int kcal;
-  FoodItem({required this.emoji, required this.name, required this.portion, required this.kcal});
-}
-
-class MealSection {
-  final String title;
-  final List<FoodItem> items;
-  MealSection({required this.title, required this.items});
-}
-
-// ── Page ─────────────────────────────────────────────────────────────────────
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
@@ -45,18 +11,17 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  static const Color teal     = Color(0xFF2BBFAC);
+  static const Color teal = Color(0xFF2BBFAC);
   static const Color tealDark = Color(0xFF1FA899);
-  static const Color tealLight= Color(0xFFE8F9F7);
-  static const Color tealMid  = Color(0xFFC0EDE8);
+  static const Color tealLight = Color(0xFFE8F9F7);
+  static const Color tealMid = Color(0xFFC0EDE8);
   static const Color textMain = Color(0xFF1A2E2B);
-  static const Color textSub  = Color(0xFF6B8C88);
-  static const Color textLabel= Color(0xFFAAC4C1);
-  static const Color cardBg   = Colors.white;
-  static const Color border   = Color(0xFFE0F0EE);
+  static const Color textSub = Color(0xFF6B8C88);
+  static const Color textLabel = Color(0xFFAAC4C1);
+  static const Color cardBg = Colors.white;
+  static const Color border = Color(0xFFE0F0EE);
 
-  int selectedDay = 4; // index 0–6 → Sun=0 … Sat=6; Fri=4 (index 5 in list below, value=9)
-  // Days: Sun4, Mon5, Tue6, Wed7, Thu8, Fri9, Sat10
+  final MealLogRepository _mealLogRepo = MealLogRepository(ApiService());
   final List<Map<String, dynamic>> days = [
     {'label': 'Sun', 'num': 4},
     {'label': 'Mon', 'num': 5},
@@ -67,19 +32,40 @@ class _HistoryPageState extends State<HistoryPage> {
     {'label': 'Sat', 'num': 10},
   ];
 
-  final List<MealSection> meals = [
-    MealSection(title: 'Sarapan', items: [
-      FoodItem(emoji: '🥣', name: 'Oatmeal Pisang',   portion: '1 Mangkuk (250g)', kcal: 320),
-      FoodItem(emoji: '☕', name: 'Kopi Susu',         portion: '1 Gelas (200ml)',  kcal: 85),
-    ]),
-    MealSection(title: 'Makan Siang', items: [
-      FoodItem(emoji: '🍛', name: 'Nasi Campur Bali', portion: '1 Porsi Lengkap',  kcal: 540),
-    ]),
-    MealSection(title: 'Makan Malam', items: []),
-  ];
-
-  int get totalKcal => meals.expand((m) => m.items).fold(0, (s, i) => s + i.kcal);
+  bool _isLoading = true;
+  String? _error;
+  List<MealLogModel> _mealLogs = [];
+  int selectedDay = 4;
   static const int targetKcal = 2000;
+
+  double get totalKcal =>
+      _mealLogs.fold(0.0, (sum, log) => sum + log.totalCalories);
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMealLogs();
+  }
+
+  Future<void> _fetchMealLogs() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final logs = await _mealLogRepo.fetchMealLogs();
+      setState(() {
+        _mealLogs = logs;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,14 +74,31 @@ class _HistoryPageState extends State<HistoryPage> {
         children: [
           _buildHeader(),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  ...meals.map((m) => _buildMealSection(m)),
-                  _buildTotalCard(),
-                  const SizedBox(height: 16),
-                ],
+            child: RefreshIndicator(
+              onRefresh: _fetchMealLogs,
+              color: teal,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    if (_isLoading) ...[
+                      const SizedBox(height: 24),
+                      const Center(child: CircularProgressIndicator()),
+                    ] else if (_error != null) ...[
+                      const SizedBox(height: 24),
+                      _buildErrorCard(_error!),
+                    ] else if (_mealLogs.isEmpty) ...[
+                      const SizedBox(height: 24),
+                      _buildEmptyCard(),
+                    ] else ...[
+                      ..._mealLogs.map((log) => _buildMealLogCard(log)),
+                      const SizedBox(height: 16),
+                      _buildTotalCard(),
+                      const SizedBox(height: 16),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -104,7 +107,6 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
@@ -120,7 +122,6 @@ class _HistoryPageState extends State<HistoryPage> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           child: Column(
             children: [
-              // Title row
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -129,12 +130,17 @@ class _HistoryPageState extends State<HistoryPage> {
                     child: GestureDetector(
                       onTap: () => Navigator.maybePop(context),
                       child: Container(
-                        width: 36, height: 36,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: Colors.white24,
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Icon(Icons.chevron_left, color: Colors.white, size: 22),
+                        child: const Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                     ),
                   ),
@@ -149,7 +155,6 @@ class _HistoryPageState extends State<HistoryPage> {
                 ],
               ),
               const SizedBox(height: 20),
-              // Day selector
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(days.length, (i) => _buildDayItem(i)),
@@ -176,22 +181,29 @@ class _HistoryPageState extends State<HistoryPage> {
           children: [
             Text(
               days[index]['label'],
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withOpacity(0.65),
+                color: Color.fromRGBO(255, 255, 255, 0.65),
                 letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 6),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 30, height: 30,
+              width: 30,
+              height: 30,
               decoration: BoxDecoration(
                 color: isActive ? Colors.white : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: isActive
-                    ? [const BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))]
+                    ? [
+                        const BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ]
                     : null,
               ),
               alignment: Alignment.center,
@@ -200,7 +212,9 @@ class _HistoryPageState extends State<HistoryPage> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: isActive ? tealDark : Colors.white.withOpacity(0.8),
+                  color: isActive
+                      ? tealDark
+                      : const Color.fromRGBO(255, 255, 255, 0.8),
                 ),
               ),
             ),
@@ -210,128 +224,184 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  // ── Meal Section ──────────────────────────────────────────────────────────
-  Widget _buildMealSection(MealSection meal) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+  Widget _buildMealLogCard(MealLogModel log) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border, width: 1.5),
+        boxShadow: [
+          const BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.03),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: tealLight,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 8, height: 8,
-                      decoration: const BoxDecoration(color: teal, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      meal.title,
+                      log.mealType,
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                         color: textMain,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(log.createdAt),
+                      style: const TextStyle(fontSize: 12, color: textSub),
+                    ),
                   ],
                 ),
-                GestureDetector(
-                  onTap: () => _showAddSnack(meal.title),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 30, height: 30,
-                    decoration: const BoxDecoration(color: tealLight, shape: BoxShape.circle),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.add, color: teal, size: 18),
+                Text(
+                  '${log.totalCalories} kcal',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: tealDark,
                   ),
                 ),
               ],
             ),
           ),
-          // Items or empty
-          if (meal.items.isEmpty)
-            _buildEmptyCard()
-          else
-            ...meal.items.map((item) => _buildFoodCard(item)),
+          ...log.foodLogs.map((item) => _buildFoodLogItem(item)),
         ],
       ),
     );
   }
 
-  Widget _buildFoodCard(FoodItem item) {
+  Widget _buildFoodLogItem(FoodLogModel item) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: tealLight,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              item.type == 'recipe' ? '🍽️' : '🥬',
+              style: const TextStyle(fontSize: 22),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _foodLabel(item),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: textMain,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _foodSubtitle(item),
+                  style: const TextStyle(fontSize: 12, color: textSub),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${item.quantity}${item.type == 'ingredient' ? 'g' : 'x'}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: tealDark,
+            ),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // left accent bar
-              Container(width: 3, color: teal),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48, height: 48,
-                        decoration: BoxDecoration(
-                          color: tealLight,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(item.emoji, style: const TextStyle(fontSize: 22)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(item.name,
-                              style: const TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w700, color: textMain,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(item.portion,
-                              style: const TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.w500, color: textSub,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '${item.kcal} kcal',
-                        style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w800, color: tealDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    );
+  }
+
+  String _foodLabel(FoodLogModel item) {
+    if (item.nameManual != null && item.nameManual!.isNotEmpty) {
+      return item.nameManual!;
+    }
+
+    if (item.type == 'ingredient') {
+      return item.ingredient?.name ?? 'Unknown Ingredient';
+    }
+
+    if (item.type == 'recipe') {
+      return item.recipe?.name ?? 'Unknown Recipe';
+    }
+
+    return item.type;
+  }
+
+  String _foodSubtitle(FoodLogModel item) {
+    final parts = <String>[];
+    parts.add(item.type == 'ingredient' ? 'Bahan' : 'Resep');
+
+    if (item.type == 'ingredient' && item.ingredientId != null) {
+      parts.add('ID ${item.ingredientId}');
+    }
+    if (item.type == 'recipe' && item.recipeId != null) {
+      parts.add('ID ${item.recipeId}');
+    }
+    if (item.caloriesManual != null) {
+      parts.add('${item.caloriesManual!.toInt()} kcal');
+    }
+
+    return parts.join(' • ');
+  }
+
+  Widget _buildErrorCard(String error) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.red.shade100),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              error,
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
           ),
-        ),
+          GestureDetector(
+            onTap: _fetchMealLogs,
+            child: const Icon(Icons.refresh, color: Colors.red),
+          ),
+        ],
       ),
     );
   }
@@ -342,9 +412,7 @@ class _HistoryPageState extends State<HistoryPage> {
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: tealMid, width: 1.5,
-          // dashed not supported natively; use a solid lighter border
-        ),
+        border: Border.all(color: tealMid, width: 1.5),
       ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -352,15 +420,18 @@ class _HistoryPageState extends State<HistoryPage> {
           Text('🍽️', style: TextStyle(fontSize: 18)),
           SizedBox(width: 8),
           Text(
-            'Belum ada makanan dicatat',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textLabel),
+            'Belum ada catatan makanan',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: textLabel,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ── Total Card ────────────────────────────────────────────────────────────
   Widget _buildTotalCard() {
     final double progress = (totalKcal / targetKcal).clamp(0.0, 1.0);
     return Container(
@@ -373,12 +444,16 @@ class _HistoryPageState extends State<HistoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Total row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total Kalori Hari Ini',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textSub),
+              const Text(
+                'Total Kalori Riwayat',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: textSub,
+                ),
               ),
               RichText(
                 text: TextSpan(
@@ -386,13 +461,17 @@ class _HistoryPageState extends State<HistoryPage> {
                     TextSpan(
                       text: '$totalKcal ',
                       style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.w800, color: textMain,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: textMain,
                       ),
                     ),
                     const TextSpan(
                       text: 'kcal',
                       style: TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600, color: textSub,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: textSub,
                       ),
                     ),
                   ],
@@ -401,7 +480,6 @@ class _HistoryPageState extends State<HistoryPage> {
             ],
           ),
           const SizedBox(height: 12),
-          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(
@@ -415,16 +493,25 @@ class _HistoryPageState extends State<HistoryPage> {
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('0 KCAL',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textLabel),
+              Text(
+                '0 KCAL',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: textLabel,
+                ),
               ),
-              Text('TARGET: 2000 KCAL',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textLabel),
+              Text(
+                'TARGET: 2000 KCAL',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: textLabel,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          // Macro chips
           Row(
             children: [
               _buildMacroChip('42g', 'Protein'),
@@ -449,15 +536,21 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
         child: Column(
           children: [
-            Text(value,
+            Text(
+              value,
               style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w800, color: tealDark,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: tealDark,
               ),
             ),
             const SizedBox(height: 2),
-            Text(label,
+            Text(
+              label,
               style: const TextStyle(
-                fontSize: 10, fontWeight: FontWeight.w600, color: textSub,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: textSub,
               ),
             ),
           ],
@@ -466,16 +559,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  void _showAddSnack(String mealName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Tambah makanan ke $mealName'),
-        backgroundColor: teal,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }

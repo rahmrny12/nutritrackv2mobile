@@ -12,6 +12,7 @@ class AuthViewModel extends ValueNotifier<AuthState> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final passwordConfirmController = TextEditingController();
+  final otpController = TextEditingController();
 
   Future<void> login() async {
     value = value.copyWith(isLoading: true, error: null);
@@ -41,6 +42,24 @@ class AuthViewModel extends ValueNotifier<AuthState> {
       );
 
       value = value.copyWith(isLoading: false, user: user);
+    } catch (e) {
+      value = value.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> verifyOtp(String email) async {
+    value = value.copyWith(isLoading: true, error: null, otpMessage: null, otpSuccess: false);
+
+    try {
+      final res = await repo.verifyOtp(
+        email == "" ? null : email,
+        otpController.text.trim(),
+      );
+
+      final msg = res['message']?.toString();
+      final success = (res['success'] is bool) ? res['success'] as bool : (res['token'] != null);
+
+      value = value.copyWith(isLoading: false, otpSuccess: success, otpMessage: msg);
     } catch (e) {
       value = value.copyWith(isLoading: false, error: e.toString());
     }

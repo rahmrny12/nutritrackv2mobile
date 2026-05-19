@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:nutritrack/core/local_storage.dart';
 
 class ApiService {
-  final String baseUrl = "http://192.168.1.7:8000/api";
+  final String baseUrl =
+      "https://5224-2400-9800-ca1-2c91-80bb-7c93-5fbc-36c6.ngrok-free.app/api";
 
   // 🔹 COMMON HEADER
   Map<String, String> _headers({String? token}) {
@@ -16,7 +18,7 @@ class ApiService {
 
   Future<Map<String, String>> _headersWithAuth() async {
     final token = await LocalStorage.getToken();
-    
+
     return {
       "Content-Type": "application/json",
       "Accept": "application/json",
@@ -51,8 +53,7 @@ class ApiService {
     }
   }
 
-  // 🔹 GET (IMPROVED)
-  Future<dynamic> get(
+  Future<Map<String, dynamic>> get(
     String path, {
     Map<String, dynamic>? query,
     String? token,
@@ -68,17 +69,50 @@ class ApiService {
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        // 🔥 handle Laravel API Resource
-        if (data is Map && data.containsKey('data')) {
-          return data['data'];
-        }
-        return data;
-      } else {
-        throw Exception(data['message'] ?? "Gagal mengambil data");
-      }
+      return {"statusCode": response.statusCode, ...data};
     } catch (e) {
       throw Exception("GET Error: $e");
+    }
+  }
+
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required Map<String, String> fields,
+    Map<String, File>? files,
+  }) async {
+    final url = Uri.parse("$baseUrl$path");
+
+    final request = http.MultipartRequest('POST', url);
+
+    // headers (NO content-type JSON here!)
+    final token = await LocalStorage.getToken();
+    request.headers.addAll({
+      "Accept": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    });
+
+    // fields (text data)
+    request.fields.addAll(fields);
+
+    // files (image, etc)
+    if (files != null) {
+      for (final entry in files.entries) {
+        request.files.add(
+          await http.MultipartFile.fromPath(entry.key, entry.value.path),
+        );
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await streamedResponse.stream.bytesToString();
+
+    final data = jsonDecode(response);
+
+    if (streamedResponse.statusCode >= 200 &&
+        streamedResponse.statusCode < 300) {
+      return data;
+    } else {
+      throw Exception(data['message'] ?? "Multipart request failed");
     }
   }
 }

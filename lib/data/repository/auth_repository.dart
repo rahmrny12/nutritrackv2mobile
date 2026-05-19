@@ -13,14 +13,12 @@ class AuthRepository {
       "password": password,
     });
 
-    final user = UserModel.fromJson(res);
+    final user = UserModel.fromJson(res['data']);
+    final token = res['token'];
 
-    await LocalStorage.saveToken(user.token);
+    await LocalStorage.saveToken(token ?? "");
 
-    await LocalStorage.saveUser({
-      "name": user.name,
-      "email": user.email,
-    });
+    await LocalStorage.saveUser({"name": user.name, "email": user.email});
 
     return user;
   }
@@ -40,6 +38,27 @@ class AuthRepository {
       "password_confirmation": passwordConfirmation,
     });
 
-    return UserModel.fromJson(res);
+    final data = Map<String, dynamic>.from(res['data']);
+
+    await LocalStorage.saveUser(Map<String, dynamic>.from(data));
+
+    return UserModel.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> verifyOtp(String? email, String otp) async {
+    final res = await api.post('/verify-otp', {
+      "email": email == "" ? null : email,
+      "otp": otp,
+    });
+
+    // Normalize to Map
+    final data = Map<String, dynamic>.from(res ?? {});
+
+    // If API returns token and user, persist them locally
+    if (data['token'] != null) {
+      await LocalStorage.saveToken(data['token']);
+    }
+
+    return data;
   }
 }
