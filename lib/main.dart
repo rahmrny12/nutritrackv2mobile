@@ -16,7 +16,7 @@ class MainApp extends StatelessWidget {
       
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: Routes.profile, 
+      initialRoute: Routes.jantung, 
       onGenerateRoute: RouteGenerator.generateRoute,
     );
   }

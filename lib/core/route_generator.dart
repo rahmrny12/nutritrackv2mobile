@@ -11,6 +11,7 @@ import 'package:nutritrack/view/pages/edit_profile.dart';
 import 'package:nutritrack/view/pages/langganan_page.dart';
 import 'package:nutritrack/view/pages/skriningdiabetes_page.dart';
 import 'package:nutritrack/view/pages/skriningasamurat.dart';
+import 'package:nutritrack/view/pages/skriningjantung.dart';
 
 
 class Routes {
@@ -26,6 +27,7 @@ class Routes {
   static const String langganan = '/langganan_page';
   static const String diabetes = '/diabetes_page';
   static const String asamurat = '/asamurat_page';
+  static const String jantung = '/jantung_page';
 }
 
 class RouteGenerator {
@@ -53,6 +55,10 @@ class RouteGenerator {
       return MaterialPageRoute(builder: (_) => const LanggananPage());
         case Routes.diabetes:
       return MaterialPageRoute(builder: (_) => const SkriningDiabetesPage());
+      case Routes.jantung:
+      return MaterialPageRoute(builder: (_) => const SkriningJantungPage());
+      case Routes.asamurat:
+      return MaterialPageRoute(builder: (_) => const SkriningAsamUratPage());
       default:
         return _errorRoute(settings.name);
     }
