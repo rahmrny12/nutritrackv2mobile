@@ -1,10 +1,17 @@
-import 'view/pages/mood_page.dart';
 import 'package:flutter/material.dart';
 
 import 'core/app_theme.dart';
 import 'core/route_generator.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MainApp());
 }
 

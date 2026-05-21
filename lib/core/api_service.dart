@@ -5,7 +5,7 @@ import 'package:nutritrack/core/local_storage.dart';
 
 class ApiService {
   final String baseUrl =
-      "https://5224-2400-9800-ca1-2c91-80bb-7c93-5fbc-36c6.ngrok-free.app/api";
+      "https://nutritrack.web.id/api";
 
   // 🔹 COMMON HEADER
   Map<String, String> _headers({String? token}) {

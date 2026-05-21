@@ -870,6 +870,7 @@ class _DashboardPageState extends State<DashboardPage>
             },
           ),
         ),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -1109,3 +1110,4 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 }
+

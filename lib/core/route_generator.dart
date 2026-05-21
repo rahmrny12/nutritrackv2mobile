@@ -14,6 +14,8 @@ import 'package:nutritrack/view/pages/main_page.dart';
 import 'package:nutritrack/view/pages/mood_page.dart';
 import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
+import 'package:nutritrack/view/pages/recommendation_page.dart';
+import 'package:nutritrack/view/pages/recommendation_page.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 
 
@@ -31,6 +33,7 @@ class Routes {
   static const String profile = '/profile';
   static const String bmi = '/bmi';
   static const String mood = '/mood';
+  static const String recommendations = '/recommendations';
 }
 
 class RouteGenerator {
@@ -50,6 +53,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const BMIPage());
       case Routes.mood:
         return MaterialPageRoute(builder: (_) => const MoodPage());
+      case Routes.recommendations:
+        return MaterialPageRoute(builder: (_) => const RecommendationPage());
       case Routes.dashboard:
         return _protectedRoute(const DashboardPage());
       case Routes.confirmLogFood:

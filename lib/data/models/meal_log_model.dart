@@ -27,25 +27,43 @@ class FoodLogModel {
   });
 
   factory FoodLogModel.fromJson(Map<String, dynamic> json) {
+    int? parseNullableInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      return int.tryParse(value.toString());
+    }
+
     return FoodLogModel(
-      id: json['id'] as int,
-      mealLogId: json['meal_log_id'] as int,
-      type: json['type'] as String,
-      ingredientId: json['ingredient_id'] as int?,
-      recipeId: json['recipe_id'] as int?,
-      nameManual: json['name_manual'] as String?,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
+
+      mealLogId: json['meal_log_id'] is int
+          ? json['meal_log_id']
+          : int.tryParse(json['meal_log_id'].toString()) ?? 0,
+
+      type: json['type'].toString(),
+
+      ingredientId: parseNullableInt(json['ingredient_id']),
+
+      recipeId: parseNullableInt(json['recipe_id']),
+
+      nameManual: json['name_manual']?.toString(),
+
       caloriesManual: json['calories_manual'] != null
           ? double.tryParse(json['calories_manual'].toString())
           : null,
+
       quantity: json['quantity'] is int
-          ? json['quantity'] as int
+          ? json['quantity']
           : int.tryParse(json['quantity'].toString()) ?? 0,
+
       ingredient: json['ingredient'] != null
-          ? IngredientModel.fromJson(json['ingredient'])
+          ? IngredientModel.fromJson(json['ingredient'] as Map<String, dynamic>)
           : null,
 
       recipe: json['recipe'] != null
-          ? RecipeModel.fromJson(json['recipe'])
+          ? RecipeModel.fromJson(json['recipe'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -72,14 +90,22 @@ class MealLogModel {
 
   factory MealLogModel.fromJson(Map<String, dynamic> json) {
     return MealLogModel(
-      id: json['id'],
-      userId: json['user_id'],
-      mealType: json['meal_type'],
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
 
-      totalCalories: (json['total_calories'] as num).toDouble(),
+      userId: json['user_id'] is int
+          ? json['user_id']
+          : int.tryParse(json['user_id'].toString()) ?? 0,
 
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      mealType: json['meal_type'].toString(),
+
+      totalCalories: json['total_calories'] is num
+          ? (json['total_calories'] as num).toDouble()
+          : double.tryParse(json['total_calories'].toString()) ?? 0,
+
+      createdAt: DateTime.parse(json['created_at'].toString()),
+      updatedAt: DateTime.parse(json['updated_at'].toString()),
 
       foodLogs:
           (json['food_logs'] as List<dynamic>?)

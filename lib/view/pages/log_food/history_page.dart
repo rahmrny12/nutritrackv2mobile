@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:nutritrack/core/api_service.dart';
+import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/models/meal_log_model.dart';
 import 'package:nutritrack/data/repository/meal_log_repository.dart';
 
@@ -434,6 +435,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildTotalCard() {
     final double progress = (totalKcal / targetKcal).clamp(0.0, 1.0);
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -479,7 +481,9 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           ClipRRect(
             borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(
@@ -489,7 +493,9 @@ class _HistoryPageState extends State<HistoryPage> {
               valueColor: const AlwaysStoppedAnimation<Color>(teal),
             ),
           ),
+
           const SizedBox(height: 6),
+
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -511,7 +517,9 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 14),
+
           Row(
             children: [
               _buildMacroChip('42g', 'Protein'),
@@ -520,6 +528,28 @@ class _HistoryPageState extends State<HistoryPage> {
               const SizedBox(width: 8),
               _buildMacroChip('28g', 'Lemak'),
             ],
+          ),
+
+          const SizedBox(height: 18),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.recommendations);
+              },
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('Analisa AI'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: teal,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
           ),
         ],
       ),

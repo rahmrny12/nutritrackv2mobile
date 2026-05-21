@@ -184,7 +184,7 @@ class LogFoodViewModel extends ValueNotifier<LogFoodState> {
           mealLogId: mealLogId as int,
           type: 'ingredient',
           ingredientId: food.id,
-          quantity: food.portion?.toInt() ?? 1,
+          quantity: food.portion?.toInt() ?? 100,
         );
       }
 
