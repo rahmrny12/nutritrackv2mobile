@@ -8,9 +8,13 @@ class AuthViewModel extends ValueNotifier<AuthState> {
   AuthViewModel({required this.repo}) : super(AuthState());
 
   final nameController = TextEditingController();
-  final emailController = TextEditingController();
+  final emailController = TextEditingController(
+    text: "yeza@gmail.com"
+  );
   final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
+  final passwordController = TextEditingController(
+    text: "asdasdasd"
+  );
   final passwordConfirmController = TextEditingController();
   final otpController = TextEditingController();
 

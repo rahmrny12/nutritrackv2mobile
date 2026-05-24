@@ -6,6 +6,7 @@ import 'package:nutritrack/view/pages/auth/login_page.dart';
 import 'package:nutritrack/view/pages/auth/register_page.dart';
 import 'package:nutritrack/view/pages/auth/verify_otp_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
+import 'package:nutritrack/view/pages/edit_profile_page.dart';
 import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
 import 'package:nutritrack/view/pages/log_food/history_page.dart';
@@ -16,6 +17,9 @@ import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/profile_page.dart';
 import 'package:nutritrack/view/pages/recommendation_page.dart';
 import 'package:nutritrack/view/pages/recommendation_page.dart';
+import 'package:nutritrack/view/pages/screening/diabetes_screening_page.dart.dart';
+import 'package:nutritrack/view/pages/screening/gout_screening_page.dart';
+import 'package:nutritrack/view/pages/screening/heart_screening_page.dart.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 
 
@@ -31,8 +35,12 @@ class Routes {
   static const String initialLogFood = '/initial-log-food';
   static const String addMeal = '/add-meal';
   static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
   static const String bmi = '/bmi';
   static const String mood = '/mood';
+  static const String gout_screening = '/gout';
+  static const String diabetes_screening = '/diabetes';
+  static const String heart_screening = '/heart';
   static const String recommendations = '/recommendations';
 }
 
@@ -53,6 +61,12 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const BMIPage());
       case Routes.mood:
         return MaterialPageRoute(builder: (_) => const MoodPage());
+      case Routes.gout_screening:
+        return MaterialPageRoute(builder: (_) => const GoutScreeningPage());
+      case Routes.diabetes_screening:
+        return MaterialPageRoute(builder: (_) => const DiabetesScreeningPage());
+      case Routes.heart_screening:
+        return MaterialPageRoute(builder: (_) => const HeartScreeningPage());
       case Routes.recommendations:
         return MaterialPageRoute(builder: (_) => const RecommendationPage());
       case Routes.dashboard:
@@ -71,6 +85,8 @@ class RouteGenerator {
         return _protectedRoute(const AddMealPage());
       case Routes.profile:
         return _protectedRoute(const ProfilePage());
+      case Routes.editProfile:
+        return _protectedRoute(const EditProfilePage());
       case Routes.history:
         return MaterialPageRoute(builder: (_) => const HistoryPage());
       default:

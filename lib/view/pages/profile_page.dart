@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:nutritrack/core/api_service.dart';
 import 'package:nutritrack/core/local_storage.dart';
 import 'package:nutritrack/core/route_generator.dart';
+import 'package:nutritrack/data/models/profile_model.dart';
+import 'package:nutritrack/data/repository/profile_repository.dart';
+import 'package:nutritrack/data/models/screening_result_model.dart';
+import 'package:nutritrack/data/repository/screening_repository.dart';
+import 'package:nutritrack/view/pages/edit_profile_page.dart';
+import 'package:nutritrack/view/pages/screening/screening_selection_page.dart';
+import 'package:nutritrack/view/viewmodel/navigation_viewmodel.dart';
+import 'package:nutritrack/view/viewmodel/profile_view_model.dart';
+import 'package:nutritrack/view/viewmodel/screening_state.dart';
+import 'package:nutritrack/view/viewmodel/screening_viewmodel.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, this.onTabSelected});
+
+  final void Function(int)? onTabSelected;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -14,7 +27,11 @@ class _ProfilePageState extends State<ProfilePage> {
   bool showCollapsedHeader = false;
 
   Map<String, dynamic>? _user;
-  Map<String, dynamic>? _profile;
+  Map<String, dynamic>? _profileLocation;
+  late final ProfileViewModel _profileViewModel;
+  late final ScreeningViewModel _screeningViewModel;
+
+  ProfileModel? get _profile => _profileViewModel.value.profile;
 
   Future<void> _loadUser() async {
     final data = await LocalStorage.getUser();
@@ -30,15 +47,24 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
 
     setState(() {
-      _profile = data;
+      _profileLocation = data;
     });
+  }
+
+  Future<void> _loadScreening() async {
+    await _screeningViewModel.fetchAllLatestResults();
   }
 
   @override
   void initState() {
     super.initState();
+    _profileViewModel = ProfileViewModel(ProfileRepository(ApiService()));
+    _profileViewModel.addListener(_onProfileStateChanged);
+    _screeningViewModel = ScreeningViewModel(ScreeningRepository(ApiService()));
     _loadUser();
     _loadProfile();
+    _profileViewModel.getProfile();
+    _loadScreening();
     _scrollController.addListener(() {
       if (_scrollController.offset > 120 && !showCollapsedHeader) {
         setState(() => showCollapsedHeader = true);
@@ -48,232 +74,436 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  void _onProfileStateChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
   String get userName => _user?['name'] ?? 'Guest';
 
-  double get height => _profile?['tinggi_badan'] ?? 0;
-  double get weight => _profile?['berat_badan'] ?? 0;
-  double get bmi => _profile?['bmi'] ?? 0;
-  String get location => _profile?['location'] ?? 'Unknown';
+  double get height => _profile?.tinggiBadan ?? 0;
+  double get weight => _profile?.beratBadan ?? 0;
+  double get bmi => _profile?.bmi ?? 0;
+  String get location => _profileLocation?['location'] ?? 'Unknown';
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _screeningViewModel.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F5F8),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          // ================= APP BAR =================
-          SliverAppBar(
-            expandedHeight: 60,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: const Color(0xFF1E8076),
-            automaticallyImplyLeading: false,
-            title: showCollapsedHeader
-                ? Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.person,
-                          size: 16,
-                          color: Color(0xFF2DC653),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        userName,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  )
-                : null,
-            actions: showCollapsedHeader
-                ? [
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.logout_rounded, color: Colors.red),
+    return ValueListenableBuilder<ScreeningState>(
+      valueListenable: _screeningViewModel,
+      builder: (context, screeningState, _) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF2F5F8),
+          body: RefreshIndicator(
+            onRefresh: _onRefresh,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildScreeningSummaryCard(screeningState),
+                        const SizedBox(height: 16),
+                        _buildDailyCaloriesCard(),
+                        const SizedBox(height: 16),
+                        _buildPremiumCard(context),
+                        const SizedBox(height: 20),
+                        _buildLogoutButton(),
+                        const SizedBox(height: 30),
+                      ],
                     ),
-                  ]
-                : [],
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.pin,
-              background: Container(
-                color: const Color(0xFF1E8076),
-                alignment: Alignment.center,
-                child: const Padding(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Text(
-                    'Profile',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // ================= CONTENT (avatar lives here, scrolls naturally) =================
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                // ── Green-to-white transition with avatar overlapping ──
-                Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.topCenter,
-                  children: [
-                    // Green top portion behind avatar
-                    Container(height: 60, color: const Color(0xFF1E8076)),
-
-                    // White card body below
-                    Padding(
-                      padding: const EdgeInsets.only(top: 50),
-                      child: Container(
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF2F5F8),
-                        ),
-                        padding: const EdgeInsets.only(top: 60),
-                        child: const SizedBox(),
-                      ),
-                    ),
-
-                    // Avatar sits on the seam — scrolls with content naturally
-                    if (!showCollapsedHeader)
-                      Positioned(
-                        top: 10,
-                        child: // Avatar (smooth collapse like Instagram)
-                        AnimatedPositioned(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut,
-                          top: showCollapsedHeader ? -30 : 10,
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOut,
-                            opacity: showCollapsedHeader ? 0.0 : 1.0,
-                            child: AnimatedScale(
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOut,
-                              scale: showCollapsedHeader ? 0.7 : 1.0,
-                              child: IgnorePointer(
-                                ignoring: showCollapsedHeader,
-                                child: Container(
-                                  width: 100,
-                                  height: 100,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 16,
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.person,
-                                    size: 50,
-                                    color: Color(0xFF2DC653),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
-                // ── Profile info + cards ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 24),
-
-                      Text(
-                        userName,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.location_on, size: 14, color: Colors.grey),
-                          SizedBox(width: 4),
-                          Text(
-                            'Jember, Jawa Timur',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      SizedBox(
-                        width: 180,
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (_) => const EditProfileScreen(),
-                            //   ),
-                            // );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E8C6E),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                          ),
-                          child: const Text('Edit Profil'),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      _buildDailyCaloriesCard(),
-                      const SizedBox(height: 16),
-
-                      _buildBodyConditionCard(),
-                      const SizedBox(height: 16),
-
-                      _buildPremiumCard(context),
-                      const SizedBox(height: 16),
-
-                      _buildLogoutButton(),
-                      const SizedBox(height: 30),
-                    ],
                   ),
                 ),
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 240,
+      collapsedHeight: 72,
+      pinned: true,
+      stretch: true,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      backgroundColor: const Color(0xFF2ABFB0),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      title: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: showCollapsedHeader ? 1.0 : 0.0,
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: Color(0xFF2ABFB0), size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Halo, $userName',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Profil Saya',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.notifications_none, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [StretchMode.zoomBackground],
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2ABFB0), Color(0xFF1A9E91)],
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          size: 38,
+                          color: Color(0xFF2ABFB0),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Selamat pagi,',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              location,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          final updated = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EditProfilePage(),
+                            ),
+                          );
+
+                          if (!mounted) return;
+                          if (updated == true) {
+                            await _loadUser();
+                            await _loadProfile();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildProfileMetric(
+                          label: 'Tinggi',
+                          value: height > 0
+                              ? '${height.toStringAsFixed(0)} cm'
+                              : '-',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildProfileMetric(
+                          label: 'Berat',
+                          value: weight > 0
+                              ? '${weight.toStringAsFixed(0)} kg'
+                              : '-',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildProfileMetric(
+                          label: 'BMI',
+                          value: bmi > 0 ? bmi.toStringAsFixed(1) : '-',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileMetric({required String label, required String value}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildInfoChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFB),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE8F8F6),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF2ABFB0)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScreeningSummaryCard(ScreeningState state) {
+    final screening = state.latestResult;
+    final screeningType = screening?.screeningType;
+    final screeningLevel = screening?.level;
+    final screeningScore = screening?.totalScore.toString();
+    final screeningDate = screening != null
+        ? _formatScreeningDate(screening)
+        : null;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ScreeningSelectionPage()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Skrining Terakhir',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A2E),
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (state.status == ScreeningStatus.loading) ...[
+              const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            ] else if (state.errorMessage != null) ...[
+              Text(
+                'Gagal memuat hasil skrining: ${state.errorMessage}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFFEF4444),
+                  height: 1.4,
+                ),
+              ),
+            ] else if (screening != null) ...[
+              Text(
+                '${_screeningTypeLabel(screeningType)} • ${screeningLevel ?? '-'}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoChip(
+                      icon: Icons.check_circle_outline,
+                      label: 'Skor: ${screeningScore ?? '-'}',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildInfoChip(
+                      icon: Icons.calendar_today,
+                      label: screeningDate ?? '-',
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              const Text(
+                'Belum ada hasil skrining tersimpan. Lakukan skrining untuk melihat ringkasan di sini.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _screeningTypeLabel(String? type) {
+    switch (type) {
+      case 'gout':
+        return 'Skrining Asam Urat';
+      case 'diabetes':
+        return 'Skrining Diabetes';
+      case 'heart':
+        return 'Skrining Jantung';
+      default:
+        return 'Skrining';
+    }
+  }
+
+  String _formatScreeningDate(ScreeningResultModel screening) {
+    final date = screening.timestamp.toLocal();
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   // ================= DAILY CALORIES CARD =================
@@ -298,7 +528,7 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Kalori Harian',
+                'Nutrisi Harian',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -312,9 +542,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   color: const Color(0xFFF0FBF4),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.restaurant_rounded,
-                  color: Color(0xFF2DC653),
+                  color: Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
               ),
@@ -325,7 +555,7 @@ class _ProfilePageState extends State<ProfilePage> {
             label: 'Kalori',
             value: '1850 kcal',
             progress: 0.75,
-            color: const Color(0xFF2DC653),
+            color: const Color.fromARGB(255, 198, 45, 45),
           ),
           const SizedBox(height: 16),
           _buildNutrientRow(
@@ -394,193 +624,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ],
-    );
-  }
-
-  // ================= BODY CONDITION CARD =================
-  Widget _buildBodyConditionCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Kondisi Tubuh',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E),
-                  letterSpacing: -0.2,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FBF4),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.monitor_weight_outlined,
-                  color: Color(0xFF2DC653),
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _buildBodyStatBox(label: 'TINGGI', value: '${height.toStringAsFixed(0)} cm'),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: _buildBodyStatBox(label: 'BERAT', value: '${weight.toStringAsFixed(0)} kg'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFB),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'BMI',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${bmi.toStringAsFixed(1)} - Normal',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2DC653).withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_outline_rounded,
-                    color: Color(0xFF2DC653),
-                    size: 22,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFB),
-              borderRadius: BorderRadius.circular(14),
-              border: const Border(
-                left: BorderSide(color: Color(0xFFFFA500), width: 3.5),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'TARGET',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      '65 kg',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A2E),
-                      ),
-                    ),
-                  ],
-                ),
-                const Icon(
-                  Icons.flag_outlined,
-                  color: Color(0xFFFFA500),
-                  size: 22,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBodyStatBox({required String label, required String value}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFB),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -702,13 +745,22 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.grey[200],
+          foregroundColor: Colors.black87,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      _loadUser(),
+      _loadProfile(),
+      _profileViewModel.getProfile(),
+      _loadScreening(),
+    ]);
   }
 }

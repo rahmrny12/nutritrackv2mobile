@@ -3,6 +3,7 @@ import 'package:nutritrack/core/local_storage.dart';
 import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/view/viewmodel/navigation_state.dart';
 import 'package:nutritrack/view/viewmodel/navigation_viewmodel.dart';
+import 'package:nutritrack/view/viewmodel/theme_viewmodel.dart';
 import 'widgets/bottom_nav.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -17,6 +18,8 @@ class _DashboardPageState extends State<DashboardPage>
   int _selectedDay = 5;
   late TabController _tabController;
   late NavigationViewModel _navigationViewModel;
+  late ThemeViewModel _themeViewModel;
+  late VoidCallback _themeListener;
 
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _user;
@@ -30,7 +33,6 @@ class _DashboardPageState extends State<DashboardPage>
     });
   }
 
-  static const Color _teal = Color(0xFF2ABFB0);
   static const double _expandedHeight = 420.0;
   static const double _collapsedHeight = 70.0;
 
@@ -48,12 +50,6 @@ class _DashboardPageState extends State<DashboardPage>
   ];
 
   final List<String> _moodEmojis = ['😊', '😐', '😊', '😄', '😊', '😊', '😄'];
-
-  final List<Map<String, dynamic>> _menuItems = [
-    {'title': 'Breakfast', 'kcal': '456 - 512 kcal', 'emoji': '🍱'},
-    {'title': 'Lunch', 'kcal': '600 - 720 kcal', 'emoji': '🍜'},
-    {'title': 'Dinner', 'kcal': '400 - 480 kcal', 'emoji': '🥗'},
-  ];
 
   final List<Map<String, dynamic>> _articles = [
     {
@@ -101,6 +97,9 @@ class _DashboardPageState extends State<DashboardPage>
   void initState() {
     super.initState();
     _navigationViewModel = NavigationViewModel();
+    _themeViewModel = ThemeViewModel();
+    _themeListener = () => setState(() {});
+    _themeViewModel.addListener(_themeListener);
     _tabController = TabController(length: 3, vsync: this);
 
     _loadProfile();
@@ -129,6 +128,7 @@ class _DashboardPageState extends State<DashboardPage>
   void dispose() {
     _scrollController.dispose();
     _navigationViewModel.dispose();
+    _themeViewModel.removeListener(_themeListener);
     _tabController.dispose();
     super.dispose();
   }
@@ -151,8 +151,12 @@ class _DashboardPageState extends State<DashboardPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = _themeViewModel.currentTheme;
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F5),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           Expanded(
@@ -160,15 +164,89 @@ class _DashboardPageState extends State<DashboardPage>
               controller: _scrollController,
               physics: const BouncingScrollPhysics(),
               slivers: [
-                _buildSliverAppBar(context),
+                _buildSliverAppBar(context, colors, textTheme),
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 12),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GestureDetector(
+                          onTap: () {
+                            // Navigator.pushNamed(
+                            //   context,
+                            //   Routes.aiRecipeRecommendation,
+                            // );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [colors.primary, colors.secondary],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: colors.onPrimary.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.auto_awesome,
+                                    color: colors.onPrimary,
+                                  ),
+                                ),
+
+                                const SizedBox(width: 12),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Generate Resep AI',
+                                        style: textTheme.labelLarge?.copyWith(
+                                          color: colors.onPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Rekomendasi resep rendah purin untuk penderita asam urat',
+                                        style: textTheme.bodyMedium?.copyWith(
+                                          color: colors.onPrimary.withOpacity(
+                                            0.8,
+                                          ),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: colors.onPrimary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 20),
-                      _buildMoodWeek(),
+                      _buildMoodWeek(textTheme),
                       const SizedBox(height: 20),
-                      _buildRingkasanCepat(),
+                      _buildRingkasanCepat(textTheme),
                       const SizedBox(height: 24),
                       _buildArtikelSection(),
                     ],
@@ -185,13 +263,17 @@ class _DashboardPageState extends State<DashboardPage>
   // ─────────────────────────────────────────
   // SLIVER APP BAR
   // ─────────────────────────────────────────
-  Widget _buildSliverAppBar(BuildContext context) {
+  Widget _buildSliverAppBar(
+    BuildContext context,
+    ColorScheme colors,
+    TextTheme textTheme,
+  ) {
     return SliverAppBar(
       expandedHeight: _expandedHeight,
       collapsedHeight: _collapsedHeight,
       pinned: true,
       stretch: true,
-      backgroundColor: _teal,
+      backgroundColor: colors.primary,
       elevation: _isCollapsed ? 4 : 0,
       automaticallyImplyLeading: false,
       shape: const RoundedRectangleBorder(
@@ -216,14 +298,18 @@ class _DashboardPageState extends State<DashboardPage>
                 children: [
                   Text(
                     'Selamat pagi,',
-                    style: TextStyle(fontSize: 11, color: Colors.white70),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _themeViewModel.currentTheme.colorScheme.onPrimary
+                          .withOpacity(0.7),
+                    ),
                   ),
                   Text(
                     _userName,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: _themeViewModel.currentTheme.colorScheme.onPrimary,
                     ),
                   ),
                 ],
@@ -232,14 +318,15 @@ class _DashboardPageState extends State<DashboardPage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
+                color: _themeViewModel.currentTheme.colorScheme.onPrimary
+                    .withOpacity(0.25),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
+              child: Text(
                 '850 kcal tersisa',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white,
+                  color: _themeViewModel.currentTheme.colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -252,13 +339,13 @@ class _DashboardPageState extends State<DashboardPage>
       flexibleSpace: FlexibleSpaceBar(
         stretchModes: const [StretchMode.zoomBackground],
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF2ABFB0), Color(0xFF1A9E91)],
+              colors: [colors.primary, colors.primary],
             ),
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(32),
               bottomRight: Radius.circular(32),
             ),
@@ -290,7 +377,11 @@ class _DashboardPageState extends State<DashboardPage>
                                 'Selamat pagi,',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white70,
+                                  color: _themeViewModel
+                                      .currentTheme
+                                      .colorScheme
+                                      .onPrimary
+                                      .withOpacity(0.7),
                                 ),
                               ),
                               Text(
@@ -298,40 +389,14 @@ class _DashboardPageState extends State<DashboardPage>
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: _themeViewModel
+                                      .currentTheme
+                                      .colorScheme
+                                      .onPrimary,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Tinggi: $_userHeight cm",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              "Berat: $_userWeight kg",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              "BMI: $_userBMI",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
                         ),
                         _notificationButton(),
                       ],
@@ -350,8 +415,15 @@ class _DashboardPageState extends State<DashboardPage>
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: isSelected
-                                      ? Colors.white
-                                      : Colors.white60,
+                                      ? _themeViewModel
+                                            .currentTheme
+                                            .colorScheme
+                                            .onPrimary
+                                      : _themeViewModel
+                                            .currentTheme
+                                            .colorScheme
+                                            .onPrimary
+                                            .withOpacity(0.6),
                                   fontWeight: isSelected
                                       ? FontWeight.w600
                                       : FontWeight.normal,
@@ -363,7 +435,10 @@ class _DashboardPageState extends State<DashboardPage>
                                 height: 32,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? Colors.white
+                                      ? _themeViewModel
+                                            .currentTheme
+                                            .colorScheme
+                                            .onPrimary
                                       : Colors.transparent,
                                   shape: BoxShape.circle,
                                 ),
@@ -373,7 +448,15 @@ class _DashboardPageState extends State<DashboardPage>
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: isSelected ? _teal : Colors.white,
+                                    color: isSelected
+                                        ? _themeViewModel
+                                              .currentTheme
+                                              .colorScheme
+                                              .primary
+                                        : _themeViewModel
+                                              .currentTheme
+                                              .colorScheme
+                                              .onPrimary,
                                   ),
                                 ),
                               ),
@@ -387,9 +470,19 @@ class _DashboardPageState extends State<DashboardPage>
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: _themeViewModel
+                            .currentTheme
+                            .colorScheme
+                            .onPrimary
+                            .withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white24),
+                        border: Border.all(
+                          color: _themeViewModel
+                              .currentTheme
+                              .colorScheme
+                              .onPrimary
+                              .withOpacity(0.24),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,12 +490,15 @@ class _DashboardPageState extends State<DashboardPage>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Target Kalori',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: _themeViewModel
+                                      .currentTheme
+                                      .colorScheme
+                                      .onPrimary,
                                 ),
                               ),
                               Container(
@@ -411,14 +507,21 @@ class _DashboardPageState extends State<DashboardPage>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.25),
+                                  color: _themeViewModel
+                                      .currentTheme
+                                      .colorScheme
+                                      .onPrimary
+                                      .withOpacity(0.25),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Target Harian',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white,
+                                    color: _themeViewModel
+                                        .currentTheme
+                                        .colorScheme
+                                        .onPrimary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -426,29 +529,29 @@ class _DashboardPageState extends State<DashboardPage>
                             ],
                           ),
                           const SizedBox(height: 6),
-                          const Text(
+                          Text(
                             'Pantau target 2000 kcal dan sisa\nkebutuhan makan Anda untuk hari ini.',
-                            style: TextStyle(
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colors.onPrimary.withOpacity(0.7),
                               fontSize: 12,
-                              color: Colors.white70,
                               height: 1.4,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'Sisa kalori',
-                            style: TextStyle(
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colors.onPrimary.withOpacity(0.7),
                               fontSize: 12,
-                              color: Colors.white70,
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
+                          Text(
                             '850 kcal',
-                            style: TextStyle(
+                            style: textTheme.headlineSmall?.copyWith(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: colors.onPrimary,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -456,9 +559,11 @@ class _DashboardPageState extends State<DashboardPage>
                             borderRadius: BorderRadius.circular(6),
                             child: LinearProgressIndicator(
                               value: 850 / 2000,
-                              backgroundColor: Colors.white30,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                              backgroundColor: colors.onPrimary.withOpacity(
+                                0.3,
+                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colors.onPrimary,
                               ),
                               minHeight: 6,
                             ),
@@ -473,14 +578,14 @@ class _DashboardPageState extends State<DashboardPage>
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: colors.surface,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               alignment: Alignment.center,
-                              child: const Text(
+                              child: Text(
                                 'Catat Makanan',
-                                style: TextStyle(
-                                  color: _teal,
+                                style: textTheme.labelLarge?.copyWith(
+                                  color: colors.primary,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                 ),
@@ -507,12 +612,13 @@ class _DashboardPageState extends State<DashboardPage>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: _themeViewModel.currentTheme.colorScheme.onPrimary
+                .withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.notifications_none,
-            color: Colors.white,
+            color: _themeViewModel.currentTheme.colorScheme.onPrimary,
             size: 22,
           ),
         ),
@@ -523,9 +629,12 @@ class _DashboardPageState extends State<DashboardPage>
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: Colors.red.shade400,
+              color: _themeViewModel.currentTheme.colorScheme.error,
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 1),
+              border: Border.all(
+                color: _themeViewModel.currentTheme.colorScheme.onPrimary,
+                width: 1,
+              ),
             ),
           ),
         ),
@@ -536,16 +645,16 @@ class _DashboardPageState extends State<DashboardPage>
   // ─────────────────────────────────────────
   // MOOD WEEK
   // ─────────────────────────────────────────
-  Widget _buildMoodWeek() {
+  Widget _buildMoodWeek(TextTheme textTheme) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _themeViewModel.currentTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: _themeViewModel.currentTheme.shadowColor.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -557,29 +666,32 @@ class _DashboardPageState extends State<DashboardPage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Bagaimana Perasaanmu Minggu Ini?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
+                  style: _themeViewModel.currentTheme.textTheme.bodyLarge
+                      ?.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color:
+                            _themeViewModel.currentTheme.colorScheme.onSurface,
+                      ),
                 ),
               ),
               GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, Routes.mood),
+                onTap: () => Navigator.pushNamed(context, Routes.mood),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F0F0),
+                    color:
+                        _themeViewModel.currentTheme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.chevron_right,
                     size: 18,
-                    color: Color(0xFF888888),
+                    color: _themeViewModel.currentTheme.colorScheme.onSurface
+                        .withOpacity(0.65),
                   ),
                 ),
               ),
@@ -596,9 +708,12 @@ class _DashboardPageState extends State<DashboardPage>
                   children: [
                     Text(
                       _days[index]['label'],
-                      style: TextStyle(
+                      style: textTheme.bodyMedium?.copyWith(
                         fontSize: 10,
-                        color: isSelected ? _teal : const Color(0xFF999999),
+                        color: isSelected
+                            ? _themeViewModel.currentTheme.colorScheme.primary
+                            : _themeViewModel.currentTheme.colorScheme.onSurface
+                                  .withOpacity(0.6),
                         fontWeight: isSelected
                             ? FontWeight.w600
                             : FontWeight.normal,
@@ -609,7 +724,8 @@ class _DashboardPageState extends State<DashboardPage>
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFFE6F7F6)
+                            ? _themeViewModel.currentTheme.colorScheme.primary
+                                  .withOpacity(0.15)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -631,18 +747,18 @@ class _DashboardPageState extends State<DashboardPage>
   // ─────────────────────────────────────────
   // RINGKASAN CEPAT
   // ─────────────────────────────────────────
-  Widget _buildRingkasanCepat() {
+  Widget _buildRingkasanCepat(TextTheme textTheme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _themeViewModel.currentTheme.colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: _themeViewModel.currentTheme.shadowColor.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -654,12 +770,12 @@ class _DashboardPageState extends State<DashboardPage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Ringkasan hari ini',
-                  style: TextStyle(
-                    fontSize: 15,
+                  style: textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
+                    color: _themeViewModel.currentTheme.colorScheme.onSurface,
+                    fontSize: 15,
                   ),
                 ),
                 GestureDetector(
@@ -669,13 +785,17 @@ class _DashboardPageState extends State<DashboardPage>
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F0F0),
+                      color: _themeViewModel
+                          .currentTheme
+                          .colorScheme
+                          .surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.chevron_right,
                       size: 18,
-                      color: Color(0xFF888888),
+                      color: _themeViewModel.currentTheme.colorScheme.onSurface
+                          .withOpacity(0.65),
                     ),
                   ),
                 ),
@@ -687,22 +807,31 @@ class _DashboardPageState extends State<DashboardPage>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Mood',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF888888),
-                        ),
+                        style: _themeViewModel.currentTheme.textTheme.bodyMedium
+                            ?.copyWith(
+                              fontSize: 12,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
+                            ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         'Baik',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                        style: _themeViewModel.currentTheme.textTheme.bodyLarge
+                            ?.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface,
+                            ),
                       ),
                     ],
                   ),
@@ -710,22 +839,31 @@ class _DashboardPageState extends State<DashboardPage>
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Sisa Target Kalori',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF888888),
-                        ),
+                        style: _themeViewModel.currentTheme.textTheme.bodyMedium
+                            ?.copyWith(
+                              fontSize: 12,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
+                            ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         '850',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                        style: _themeViewModel.currentTheme.textTheme.bodyLarge
+                            ?.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface,
+                            ),
                       ),
                     ],
                   ),
@@ -733,78 +871,229 @@ class _DashboardPageState extends State<DashboardPage>
               ],
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Menu Hari Ini',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A),
+            GestureDetector(
+              onTap: () {
+                _showScreeningSelectionDialog(context);
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      _themeViewModel.currentTheme.colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _themeViewModel.currentTheme.colorScheme.onSurface
+                        .withOpacity(0.08),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.health_and_safety_outlined,
+                      color: _themeViewModel.currentTheme.colorScheme.secondary,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mulai Skrining',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Cek kondisi kesehatan dan rekomendasi nutrisi',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.65),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: _themeViewModel.currentTheme.colorScheme.onSurface
+                          .withOpacity(0.65),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            ..._menuItems.map((item) => _buildMenuCard(item)).toList(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuCard(Map<String, dynamic> item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFA),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFECF0EF), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _teal,
-              borderRadius: BorderRadius.circular(4),
-            ),
+  void _showScreeningSelectionDialog(BuildContext context) {
+    final theme = _themeViewModel.currentTheme;
+    final colors = theme.colorScheme;
+    final options = [
+      {
+        'title': 'Skrining Asam Urat',
+        'subtitle': 'Deteksi kondisi asam urat dan rekomendasi pola makan',
+        'icon': Icons.health_and_safety_outlined,
+        'route': Routes.gout_screening,
+      },
+      {
+        'title': 'Skrining Diabetes',
+        'subtitle': 'Cek risiko diabetes dan kebiasaan gula darah',
+        'icon': Icons.monitor_heart_outlined,
+        'route': Routes.diabetes_screening,
+      },
+      {
+        'title': 'Skrining Jantung',
+        'subtitle': 'Evaluasi risiko kesehatan jantung dan aktivitas harian',
+        'icon': Icons.favorite_outline,
+        'route': Routes.heart_screening,
+      },
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  item['title'],
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.primary,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      topRight: Radius.circular(18),
+                    ),
+                  ),
+                  child: Text(
+                    'Pilih Jenis Skrining',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: colors.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  item['kcal'],
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF888888),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
+                  child: Column(
+                    children: options.map((option) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Material(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                option['route'] as String,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: colors.onSurface.withOpacity(0.08),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: colors.primary.withOpacity(0.12),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      option['icon'] as IconData,
+                                      size: 24,
+                                      color: colors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          option['title'] as String,
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: colors.onSurface,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          option['subtitle'] as String,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: colors.onSurface
+                                                    .withOpacity(0.7),
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: colors.onSurface.withOpacity(0.55),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
             ),
           ),
-          Text(item['emoji'], style: const TextStyle(fontSize: 28)),
-          const SizedBox(width: 10),
-          Container(
-            width: 30,
-            height: 30,
-            decoration: const BoxDecoration(
-              color: _teal,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.add, color: Colors.white, size: 18),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -821,21 +1110,21 @@ class _DashboardPageState extends State<DashboardPage>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Artikel Untukmu',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: _themeViewModel.currentTheme.colorScheme.onSurface,
                 ),
               ),
               GestureDetector(
                 onTap: () {},
-                child: const Text(
+                child: Text(
                   'Lihat semua',
                   style: TextStyle(
                     fontSize: 13,
-                    color: _teal,
+                    color: _themeViewModel.currentTheme.colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -846,9 +1135,13 @@ class _DashboardPageState extends State<DashboardPage>
         const SizedBox(height: 4),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Text(
+          child: Text(
             'Konten pilihan sesuai kebutuhan kesehatanmu',
-            style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+            style: TextStyle(
+              fontSize: 12,
+              color: _themeViewModel.currentTheme.colorScheme.onSurface
+                  .withOpacity(0.6),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -919,21 +1212,30 @@ class _DashboardPageState extends State<DashboardPage>
                   const SizedBox(height: 10),
                   Text(
                     article['title'],
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                      height: 1.3,
-                    ),
+                    style: _themeViewModel.currentTheme.textTheme.bodyLarge
+                        ?.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: _themeViewModel
+                              .currentTheme
+                              .colorScheme
+                              .onSurface,
+                          height: 1.3,
+                        ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     article['subtitle'],
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF666666),
-                      height: 1.4,
-                    ),
+                    style: _themeViewModel.currentTheme.textTheme.bodyMedium
+                        ?.copyWith(
+                          fontSize: 12,
+                          color: _themeViewModel
+                              .currentTheme
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                          height: 1.4,
+                        ),
                   ),
                   const SizedBox(height: 14),
                   Row(
@@ -941,15 +1243,24 @@ class _DashboardPageState extends State<DashboardPage>
                       Icon(
                         Icons.access_time_rounded,
                         size: 13,
-                        color: Color(0xFF999999),
+                        color: _themeViewModel
+                            .currentTheme
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         article['duration'],
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF999999),
-                        ),
+                        style: _themeViewModel.currentTheme.textTheme.bodyMedium
+                            ?.copyWith(
+                              fontSize: 11,
+                              color: _themeViewModel
+                                  .currentTheme
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
+                            ),
                       ),
                       const Spacer(),
                       Container(
@@ -981,7 +1292,8 @@ class _DashboardPageState extends State<DashboardPage>
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
+                color: _themeViewModel.currentTheme.colorScheme.onSurface
+                    .withOpacity(0.08),
                 borderRadius: BorderRadius.circular(18),
               ),
               alignment: Alignment.center,
@@ -1020,7 +1332,8 @@ class _DashboardPageState extends State<DashboardPage>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
+                color: _themeViewModel.currentTheme.colorScheme.onSurface
+                    .withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
@@ -1051,29 +1364,36 @@ class _DashboardPageState extends State<DashboardPage>
               article['title'],
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A),
-                height: 1.3,
-              ),
+              style: _themeViewModel.currentTheme.textTheme.bodyMedium
+                  ?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: _themeViewModel.currentTheme.colorScheme.onSurface,
+                    height: 1.3,
+                  ),
             ),
             const Spacer(),
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.access_time_rounded,
                   size: 11,
-                  color: Color(0xFF999999),
+                  color: _themeViewModel.currentTheme.colorScheme.onSurface
+                      .withOpacity(0.6),
                 ),
                 const SizedBox(width: 3),
                 Expanded(
                   child: Text(
                     article['duration'],
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF999999),
-                    ),
+                    style: _themeViewModel.currentTheme.textTheme.bodySmall
+                        ?.copyWith(
+                          fontSize: 10,
+                          color: _themeViewModel
+                              .currentTheme
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.6),
+                        ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1110,4 +1430,3 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 }
-

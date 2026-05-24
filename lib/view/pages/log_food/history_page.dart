@@ -3,6 +3,8 @@ import 'package:nutritrack/core/api_service.dart';
 import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/models/meal_log_model.dart';
 import 'package:nutritrack/data/repository/meal_log_repository.dart';
+import 'package:nutritrack/view/viewmodel/history_state.dart';
+import 'package:nutritrack/view/viewmodel/history_viewmodel.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -22,49 +24,65 @@ class _HistoryPageState extends State<HistoryPage> {
   static const Color cardBg = Colors.white;
   static const Color border = Color(0xFFE0F0EE);
 
-  final MealLogRepository _mealLogRepo = MealLogRepository(ApiService());
-  final List<Map<String, dynamic>> days = [
-    {'label': 'Sun', 'num': 4},
-    {'label': 'Mon', 'num': 5},
-    {'label': 'Tue', 'num': 6},
-    {'label': 'Wed', 'num': 7},
-    {'label': 'Thu', 'num': 8},
-    {'label': 'Fri', 'num': 9},
-    {'label': 'Sat', 'num': 10},
-  ];
+  late final HistoryViewModel _viewModel;
 
-  bool _isLoading = true;
-  String? _error;
-  List<MealLogModel> _mealLogs = [];
-  int selectedDay = 4;
+  int selectedDay = 6;
   static const int targetKcal = 2000;
 
-  double get totalKcal =>
-      _mealLogs.fold(0.0, (sum, log) => sum + log.totalCalories);
+  double get totalKcal => _viewModel.totalKcal;
 
   @override
   void initState() {
     super.initState();
-    _fetchMealLogs();
+
+    _viewModel = HistoryViewModel(
+      repo: MealLogRepository(ApiService()),
+    );
+
+    final now = DateTime.now();
+
+    _viewModel.fetchMealLogs(
+      startDate: now,
+      endDate: now,
+    );
   }
 
-  Future<void> _fetchMealLogs() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    // _viewModel.dispose();
+    super.dispose();
+  }
 
-    try {
-      final logs = await _mealLogRepo.fetchMealLogs();
-      setState(() {
-        _mealLogs = logs;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+  List<Map<String, dynamic>> get days {
+    final now = DateTime.now();
+
+    return List.generate(7, (index) {
+      final date = now.subtract(Duration(days: 6 - index));
+
+      return {
+        'label': _weekdayLabel(date.weekday),
+        'num': date.day,
+        'date': date,
+      };
+    });
+  }
+
+  String _weekdayLabel(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return 'Mon';
+      case DateTime.tuesday:
+        return 'Tue';
+      case DateTime.wednesday:
+        return 'Wed';
+      case DateTime.thursday:
+        return 'Thu';
+      case DateTime.friday:
+        return 'Fri';
+      case DateTime.saturday:
+        return 'Sat';
+      default:
+        return 'Sun';
     }
   }
 
@@ -75,32 +93,45 @@ class _HistoryPageState extends State<HistoryPage> {
         children: [
           _buildHeader(),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _fetchMealLogs,
-              color: teal,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    if (_isLoading) ...[
-                      const SizedBox(height: 24),
-                      const Center(child: CircularProgressIndicator()),
-                    ] else if (_error != null) ...[
-                      const SizedBox(height: 24),
-                      _buildErrorCard(_error!),
-                    ] else if (_mealLogs.isEmpty) ...[
-                      const SizedBox(height: 24),
-                      _buildEmptyCard(),
-                    ] else ...[
-                      ..._mealLogs.map((log) => _buildMealLogCard(log)),
-                      const SizedBox(height: 16),
-                      _buildTotalCard(),
-                      const SizedBox(height: 16),
-                    ],
-                  ],
-                ),
-              ),
+            child: ValueListenableBuilder<HistoryState>(
+              valueListenable: _viewModel,
+              builder: (context, state, _) {
+                return RefreshIndicator(
+                  onRefresh: () => _viewModel.fetchMealLogs(
+                    startDate: days[selectedDay]['date'],
+                    endDate: days[selectedDay]['date'],
+                  ),
+                  color: teal,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        if (state.isLoading) ...[
+                          const SizedBox(height: 24),
+                          const Center(child: CircularProgressIndicator()),
+                        ] else if (state.error != null) ...[
+                          const SizedBox(height: 24),
+                          _buildErrorCard(state.error!),
+                        ] else if (state.mealLogs.isEmpty) ...[
+                          const SizedBox(height: 24),
+                          _buildEmptyCard(),
+                        ] else ...[
+                          ...state.mealLogs.map(
+                            (log) => _buildMealLogCard(log),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          _buildTotalCard(),
+
+                          const SizedBox(height: 16),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -170,7 +201,16 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _buildDayItem(int index) {
     final bool isActive = index == selectedDay;
     return GestureDetector(
-      onTap: () => setState(() => selectedDay = index),
+      onTap: () async {
+        setState(() => selectedDay = index);
+
+        final selectedDate = days[index]['date'] as DateTime;
+
+        await _viewModel.fetchMealLogs(
+          startDate: selectedDate,
+          endDate: selectedDate,
+        );
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
@@ -399,7 +439,7 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
           GestureDetector(
-            onTap: _fetchMealLogs,
+            onTap: _viewModel.fetchMealLogs,
             child: const Icon(Icons.refresh, color: Colors.red),
           ),
         ],

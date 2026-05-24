@@ -12,26 +12,45 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  // Add your ViewModel here
-  final _navigationViewModel = NavigationViewModel(); 
+  late final NavigationViewModel _navigationViewModel;
+  late final List<Widget?> _pages;
 
-  // Define your pages here in the same order as the items list
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    const HistoryPage(),
-    const ProfilePage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _navigationViewModel = NavigationViewModel();
+    _pages = [
+      const DashboardPage(),
+      null,
+      ProfilePage(
+        onTabSelected: (index) => _navigationViewModel.selectIndex(index),
+      ),
+    ];
+  }
+
+  Widget _pageForIndex(int index) {
+    return _pages[index] ?? const SizedBox.shrink();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // IndexedStack maintains the state of all pages and only shows the selected one
       body: ValueListenableBuilder<NavigationState>(
         valueListenable: _navigationViewModel,
         builder: (context, state, _) {
+          if (_pages[state.selectedIndex] == null) {
+            switch (state.selectedIndex) {
+              case 1:
+                _pages[state.selectedIndex] = const HistoryPage();
+                break;
+              default:
+                _pages[state.selectedIndex] = const SizedBox.shrink();
+            }
+          }
+
           return IndexedStack(
             index: state.selectedIndex,
-            children: _pages,
+            children: [_pageForIndex(0), _pageForIndex(1), _pageForIndex(2)],
           );
         },
       ),

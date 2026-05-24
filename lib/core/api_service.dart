@@ -42,12 +42,8 @@ class ApiService {
       );
 
       final data = jsonDecode(response.body);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
-      } else {
-        throw Exception(data['message'] ?? "Request gagal");
-      }
+      
+      return {"statusCode": response.statusCode, ...data};
     } catch (e) {
       throw Exception("POST Error: $e");
     }

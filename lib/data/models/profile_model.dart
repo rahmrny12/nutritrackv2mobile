@@ -24,13 +24,15 @@ class ProfileModel {
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
-      id: json['id'],
-      userId: json['user_id'],
+      id: _toInt(json['id']),
+      userId: _toInt(json['user_id']),
+
       tinggiBadan: _toDouble(json['tinggi_badan']),
       beratBadan: _toDouble(json['berat_badan']),
       bmi: _toDouble(json['bmi']),
-      usia: json['usia'],
-      jenisKelamin: json['jenis_kelamin'],
+
+      usia: _toInt(json['usia']),
+      jenisKelamin: json['jenis_kelamin']?.toString(),
 
       lingkarPinggang: _toDouble(json['lingkar_pinggang']),
       lingkarPinggul: _toDouble(json['lingkar_pinggul']),
@@ -54,5 +56,10 @@ class ProfileModel {
   static double? _toDouble(dynamic value) {
     if (value == null) return null;
     return double.tryParse(value.toString());
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    return int.tryParse(value.toString());
   }
 }
