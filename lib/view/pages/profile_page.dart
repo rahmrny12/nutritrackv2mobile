@@ -55,6 +55,22 @@ class _ProfilePageState extends State<ProfilePage> {
     await _screeningViewModel.fetchAllLatestResults();
   }
 
+  Color _levelColor(String? level) {
+    switch (level?.toLowerCase()) {
+      case 'risiko rendah':
+        return Colors.green;
+
+      case 'risiko sedang':
+        return Colors.orange;
+
+      case 'risiko tinggi':
+        return Colors.red;
+
+      default:
+        return const Color(0xFF111827);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -446,13 +462,26 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ] else if (screening != null) ...[
-              Text(
-                '${_screeningTypeLabel(screeningType)} • ${screeningLevel ?? '-'}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF111827),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${_screeningTypeLabel(screeningType)} • ',
+                      style: const TextStyle(
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    TextSpan(
+                      text: screeningLevel ?? '-',
+                      style: TextStyle(
+                        color: _levelColor(screeningLevel),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
+                style: const TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 8),
               Row(

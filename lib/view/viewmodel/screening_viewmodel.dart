@@ -9,23 +9,11 @@ class ScreeningViewModel extends ValueNotifier<ScreeningState> {
 
   ScreeningViewModel(this.repository) : super(const ScreeningState());
 
-  // ─────────────────────────────
-  // FORM STATE
-  // ─────────────────────────────
-
   final form = GoutScreeningFormModel();
-
-  // ─────────────────────────────
-  // UI STATE
-  // ─────────────────────────────
 
   ScreeningState get state => value;
 
   bool get isCompleted => form.isCompleted;
-
-  // ─────────────────────────────
-  // UPDATE ANSWER
-  // ─────────────────────────────
 
   void updateAnswer({
     required String key,
@@ -75,10 +63,6 @@ class ScreeningViewModel extends ValueNotifier<ScreeningState> {
 
     notifyListeners();
   }
-
-  // ─────────────────────────────
-  // CALCULATE RESULT
-  // ─────────────────────────────
 
   ScreeningResultModel calculateResult() {
     int riskFactorScore = 0;
@@ -180,10 +164,6 @@ class ScreeningViewModel extends ValueNotifier<ScreeningState> {
     );
   }
 
-  // ─────────────────────────────
-  // SAVE RESULT
-  // ─────────────────────────────
-
   Future<void> saveResult() async {
     try {
       value = value.copyWith(
@@ -271,10 +251,6 @@ class ScreeningViewModel extends ValueNotifier<ScreeningState> {
       );
     }
   }
-
-  // ─────────────────────────────
-  // RESET
-  // ─────────────────────────────
 
   void resetState() {
     value = const ScreeningState();

@@ -13,8 +13,12 @@ class AuthRepository {
       "password": password,
     });
 
+    if (res['statusCode'] != 200) {
+      throw Exception(res['message'] ?? 'User tidak ditemukan');
+    }
+
     final user = UserModel.fromJson(res['data']);
-    final token = res['token'];
+    final token = user.token;
 
     await LocalStorage.saveToken(token ?? "");
 
@@ -38,6 +42,10 @@ class AuthRepository {
       "password_confirmation": passwordConfirmation,
     });
 
+    if (res['statusCode'] != 200) {
+      throw Exception(res['message'] ?? 'User gagal ditemukan');
+    }
+
     final data = Map<String, dynamic>.from(res['data']);
 
     await LocalStorage.saveUser(Map<String, dynamic>.from(data));
@@ -51,6 +59,10 @@ class AuthRepository {
       "otp": otp,
     });
 
+    if (res['statusCode'] != 200) {
+      throw Exception(res['message'] ?? 'Otp tidak valid');
+    }
+
     // Normalize to Map
     final data = Map<String, dynamic>.from(res ?? {});
 
@@ -60,5 +72,11 @@ class AuthRepository {
     }
 
     return data;
+  }
+
+  Future<Map<String, dynamic>> resendOtp(String email) async {
+    final response = await api.post('/email/resend', {"email": email});
+
+    return response;
   }
 }

@@ -6,6 +6,7 @@ import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/repository/auth_repository.dart';
 import 'package:nutritrack/view/viewmodel/auth_state.dart';
 import 'package:nutritrack/view/viewmodel/auth_viewmodel.dart';
+import 'dart:async';
 
 class VerifyOtpPage extends StatefulWidget {
   const VerifyOtpPage({super.key});
@@ -16,7 +17,71 @@ class VerifyOtpPage extends StatefulWidget {
 
 class _VerifyOtpPageState extends State<VerifyOtpPage> {
   late AuthViewModel viewModel;
+  int _resendCooldown = 0;
+  bool _isResending = false;
   Map<String, dynamic>? _user;
+  Timer? _timer;
+
+  void _startCooldown() {
+    _timer?.cancel();
+
+    setState(() {
+      _resendCooldown = 60;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendCooldown <= 1) {
+        timer.cancel();
+
+        if (mounted) {
+          setState(() {
+            _resendCooldown = 0;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _resendCooldown--;
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _resendOtp() async {
+    if (_isResending || _resendCooldown > 0) return;
+
+    setState(() {
+      _isResending = true;
+    });
+
+    try {
+      await viewModel.resendOtp(_user?['email'] ?? '');
+
+      if (!mounted) return;
+
+      final state = viewModel.value;
+
+      if (state.error != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.error!)));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kode OTP berhasil dikirim ulang')),
+        );
+
+        // ✅ INI YANG BENAR: start cooldown hanya kalau sukses
+        _startCooldown();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResending = false;
+        });
+      }
+    }
+  }
 
   static const int _otpLength = 6;
 
@@ -29,10 +94,14 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
     });
   }
 
-  final List<TextEditingController> _controllers =
-      List.generate(_otpLength, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(_otpLength, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    _otpLength,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(
+    _otpLength,
+    (_) => FocusNode(),
+  );
 
   @override
   void initState() {
@@ -59,6 +128,8 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
 
   @override
   void dispose() {
+    _timer?.cancel();
+
     for (final c in _controllers) {
       c.removeListener(_syncOtp);
       c.dispose();
@@ -67,6 +138,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
       f.dispose();
     }
     viewModel.otpController.dispose();
+
     super.dispose();
   }
 
@@ -100,17 +172,16 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
 
     final s = viewModel.value;
     if (s.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.error!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(s.error!)));
       return;
     }
 
     if (s.otpSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.otpMessage ?? 'Verifikasi berhasil')),
-      );
-      Navigator.pushReplacementNamed(context, Routes.auth);
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(Routes.auth, (route) => false);
     }
   }
 
@@ -128,12 +199,17 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
                 _buildHeader(),
                 Padding(
                   padding: const EdgeInsets.only(
-                      top: 180, left: 20, right: 20, bottom: 30),
+                    top: 180,
+                    left: 20,
+                    right: 20,
+                    bottom: 30,
+                  ),
                   child: Card(
                     elevation: 8,
                     shadowColor: Colors.black12,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24)),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     color: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
@@ -206,6 +282,33 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
                                     const SizedBox(height: 16),
 
                                   _buildVerifyButton(state.isLoading, _submit),
+
+                                  const SizedBox(height: 16),
+
+                                  Center(
+                                    child: TextButton(
+                                      onPressed:
+                                          (_resendCooldown > 0 || _isResending)
+                                          ? null
+                                          : _resendOtp,
+                                      child: _isResending
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : Text(
+                                              _resendCooldown > 0
+                                                  ? 'Kirim ulang OTP dalam $_resendCooldown detik'
+                                                  : 'Kirim Ulang OTP',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
                                 ],
                               );
                             },
@@ -287,7 +390,8 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
       height: 54,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-            colors: [Color(0xFF165F57), Color(0xFF23A18F)]),
+          colors: [Color(0xFF165F57), Color(0xFF23A18F)],
+        ),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -302,22 +406,26 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         child: isLoading
             ? const SizedBox(
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
               )
             : const Text(
                 'Verifikasi',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
       ),
     );
@@ -370,13 +478,11 @@ class _OtpBox extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: Color(0xFF23A18F), width: 2),
+            borderSide: const BorderSide(color: Color(0xFF23A18F), width: 2),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-                color: Color(0xFFD0E5E2), width: 1.5),
+            borderSide: const BorderSide(color: Color(0xFFD0E5E2), width: 1.5),
           ),
         ),
         onChanged: onChanged,

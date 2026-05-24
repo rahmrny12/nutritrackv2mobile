@@ -309,7 +309,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                       : () async {
                                           await viewModel.login();
 
-                                          if (viewModel.value.user != null) {
+                                          if (viewModel.value.error != null) {
                                             Navigator.pushNamed(
                                               context,
                                               Routes.bmi,

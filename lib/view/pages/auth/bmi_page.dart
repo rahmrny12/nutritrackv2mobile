@@ -191,61 +191,66 @@ class _BMIPageState extends State<BMIPage> {
   }
 
   Widget _buildForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return ValueListenableBuilder(
+      valueListenable: viewModel,
+      builder: (context, value, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildField(
-                label: 'Berat Badan (kg)',
-                hint: 'Contoh: 65',
-                controller: _bbController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildField(
+                    label: 'Berat Badan (kg)',
+                    hint: 'Contoh: 65',
+                    controller: _bbController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildField(
+                    label: 'Tinggi Badan (cm)',
+                    hint: 'Contoh: 170',
+                    controller: _tbController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildField(
-                label: 'Tinggi Badan (cm)',
-                hint: 'Contoh: 170',
-                controller: _tbController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildField(
+                    label: 'Lingkar Pinggang (Opsional)', // Added label text
+                    hint: 'Dalam cm',
+                    controller: _lingkarController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildField(
+                    label: 'Usia',
+                    hint: 'Contoh: 24',
+                    controller: _usiaController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 20),
+            _buildGenderField(),
+            const SizedBox(height: 32),
+            _buildSubmitButton(viewModel.value.isLoading),
           ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: _buildField(
-                label: 'Lingkar Pinggang (Opsional)', // Added label text
-                hint: 'Dalam cm',
-                controller: _lingkarController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildField(
-                label: 'Usia',
-                hint: 'Contoh: 24',
-                controller: _usiaController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        _buildGenderField(),
-        const SizedBox(height: 32),
-        _buildMasukButton(),
-      ],
+        );
+      },
     );
   }
 
@@ -362,7 +367,7 @@ class _BMIPageState extends State<BMIPage> {
     );
   }
 
-  Widget _buildMasukButton() {
+  Widget _buildSubmitButton(bool isLoading) {
     return Container(
       width: double.infinity,
       height: 54,
@@ -380,7 +385,7 @@ class _BMIPageState extends State<BMIPage> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: _handleSubmit,
+        onPressed: isLoading ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -388,14 +393,23 @@ class _BMIPageState extends State<BMIPage> {
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: const Text(
-          'Simpan & Hitung BMI',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                'Simpan & Hitung BMI',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
