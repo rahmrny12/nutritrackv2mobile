@@ -1,5 +1,10 @@
+import 'package:nutritrack/auth_store.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
 
 class MoodPage extends StatefulWidget {
   const MoodPage({super.key});
@@ -9,8 +14,115 @@ class MoodPage extends StatefulWidget {
 }
 
 class _MoodPageState extends State<MoodPage> {
+
+
+  final TextEditingController noteController = TextEditingController();
   double stressLevel = 4.0;
-  String selectedEnergy = 'Normal';
+  int selectedMood = 3;
+
+  List<Map<String, dynamic>> moods = [];
+  @override
+  void initState() {
+    super.initState();
+    fetchMoods(); // 🔥 ini yang auto ambil data pas halaman dibuka
+  }
+
+  Future<void> fetchMoods() async {
+    print("TOKEN FETCH: ${AuthStore.token}");
+  try {
+    final response = await http.get(
+      Uri.parse("http://192.168.1.7:8000/api/moods"),
+      headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer ${AuthStore.token}",
+    }
+    );
+
+    print("RESPONSE: ${response.body}");
+  
+
+    final data = jsonDecode(response.body);
+
+    setState(() {
+      if (data['data'] != null && data['data'] is List) {
+      final allMoods = List<Map<String, dynamic>>.from(data['data']);
+      final now = DateTime.now();
+      moods = allMoods.where((mood) {
+        final createdAt = DateTime.parse(mood['created_at']);
+        return now.difference(createdAt).inDays <= 7;
+      }).toList();
+      moods.sort((a, b) =>
+      DateTime.parse(a['created_at'])
+      .compareTo(DateTime.parse(b['created_at']))
+);
+
+      final uniqueMoods = <String, Map<String, dynamic>>{};
+
+      for (var mood in moods) {
+        final dateKey =
+            DateFormat('yyyy-MM-dd')
+                .format(DateTime.parse(mood['created_at']));
+
+        uniqueMoods[dateKey] = mood;
+      }
+
+      moods = uniqueMoods.values.toList();
+
+      } else {
+        moods = [];
+      }
+
+      if (moods.isNotEmpty) {
+        selectedMood = moods.last['mood_level'] ?? 3;
+
+        stressLevel =
+            (moods.last['stress_level'] ?? 4).toDouble();
+      }
+    });
+  } catch (e) {
+    print("Fetch error: $e");
+  }
+}
+
+Future<void> submitMood() async {
+  print("TOKEN SUBMIT: ${AuthStore.token}");
+  try {
+    final response = await http.post(
+      Uri.parse("http://192.168.1.7:8000/api/moods"),
+      headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer ${AuthStore.token}",
+    },
+      
+      body: jsonEncode({
+      "mood_level": selectedMood,
+      "stress_level": stressLevel.toInt(),
+      "note": noteController.text,
+    }),
+    );
+
+     if (response.statusCode >= 200 &&
+        response.statusCode < 300) {
+
+      await fetchMoods();
+
+      print("Mood berhasil disimpan");
+    } else {
+      print("Gagal simpan mood");
+    }
+
+  } catch (e) {
+    print("Error: $e");
+  }
+}
+
+  @override
+  void dispose() {
+  noteController.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -50,14 +162,50 @@ class _MoodPageState extends State<MoodPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _MoodEmoji(emoji: "😊", label: "Senang"),
-                        _MoodEmoji(emoji: "😐", label: "Biasa"),
-                        _MoodEmoji(emoji: "😣", label: "Sedih"),
-                      ],
-                    ),
+                    Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          setState(() {
+                            selectedMood = 5;
+                          });
+
+                        },
+                        child: _MoodEmoji(
+                        emoji: "😊",
+                        label: "Senang",
+                        isSelected: selectedMood == 5,
+                      ),
+                      ),
+
+                      GestureDetector(
+                        onTap: () async {
+                          setState(() {
+                            selectedMood = 3;
+                          });
+                        },
+                        child: _MoodEmoji(
+                        emoji: "😐",
+                        label: "Biasa",
+                        isSelected: selectedMood == 3,
+                      ),
+                      ),
+
+                      GestureDetector(
+                        onTap: () async {
+                          setState(() {
+                            selectedMood = 1;
+                          });
+                        },
+                        child: _MoodEmoji(
+                        emoji: "😣",
+                        label: "Sedih",
+                        isSelected: selectedMood == 1,
+                      ),
+                      ),
+                    ],
+                  ),
                     const SizedBox(height: 25),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -73,30 +221,110 @@ class _MoodPageState extends State<MoodPage> {
                       divisions: 10,
                       activeColor: const Color(0xFF00796B),
                       inactiveColor: Colors.grey[200],
-                      onChanged: (value) => setState(() => stressLevel = value),
+                      onChanged: (value) {
+                        setState(() {
+                          stressLevel = value;
+                        });
+                      },
                     ),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Tenang", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        Text("Sangat Stres", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        Text(
+                          "Tenang",
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                        Text(
+                          "Sangat Stres",
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
                       ],
                     ),
+
                     const SizedBox(height: 20),
-                    const Text("Energi", style: TextStyle(color: Colors.grey)),
+
+                    const Text(
+                      "Catatan",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+
                     const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _EnergyBtn(label: "Low", isSelected: selectedEnergy == "Low", onTap: () => setState(() => selectedEnergy = "Low")),
-                        _EnergyBtn(label: "Normal", isSelected: selectedEnergy == "Normal", onTap: () => setState(() => selectedEnergy = "Normal")),
-                        _EnergyBtn(label: "High", isSelected: selectedEnergy == "High", onTap: () => setState(() => selectedEnergy = "High")),
-                      ],
-                    )
+
+                    TextField(
+                      controller: noteController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: "Tulis perasaanmu hari ini...",
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F7F9),
+
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
+                        ),
+
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF1A8A7A),
+                            width: 1.5,
+                          ),
+                        ),
+
+                        contentPadding: const EdgeInsets.all(15),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await submitMood();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Mood berhasil disimpan ✨"),
+                              backgroundColor: Color(0xFF1A8A7A),
+                            ),
+                          );
+
+                          noteController.clear();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1A8A7A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        child: const Text(
+                          "Simpan Mood",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
+             ),
 
             const SizedBox(height: 20),
 
@@ -128,7 +356,26 @@ class _MoodPageState extends State<MoodPage> {
             ),
 
             const SizedBox(height: 30),
-            const Text("Trend Mingguan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              "Trend 7 Hari Terakhir",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              moods.isNotEmpty
+                  ? "${DateFormat('d MMM').format(DateTime.parse(moods.first['created_at']))} - "
+                    "${DateFormat('d MMM yyyy').format(DateTime.parse(moods.last['created_at']))}"
+                  : "-",
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
             const SizedBox(height: 15),
 
             Card(
@@ -140,46 +387,75 @@ class _MoodPageState extends State<MoodPage> {
                   children: [
                     Row(
                       children: [
-                        _Legend(color: Colors.green[900]!, label: "Mood"),
+                        _Legend(color: Colors.green.shade900, label: "Mood"),
                         const SizedBox(width: 15),
-                        _Legend(color: Colors.blue[700]!, label: "Stres"),
-                        const Spacer(),
-                        const Text("Feb 1 - Feb 7", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        _Legend(color: Colors.blue.shade700, label: "Stres"),
                       ],
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
+
                     SizedBox(
-                      height: 150,
-                      child: BarChart(
-                        BarChartData(
-                          borderData: FlBorderData(show: false),
-                          gridData: const FlGridData(show: false),
-                          titlesData: FlTitlesData(
-                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                                  return Text(days[value.toInt()], style: const TextStyle(color: Colors.grey, fontSize: 10));
-                                },
+                    height: 200,
+                    child: BarChart(
+                      BarChartData(
+                        borderData: FlBorderData(show: false),
+                        gridData: const FlGridData(show: false),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                              if (value.toInt() >= moods.length) {
+                                return const Text('');
+                              }
+
+                              final date = DateTime.parse(moods[value.toInt()]['created_at']);
+
+                              return Text(
+                              DateFormat('d MMM').format(date),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
                               ),
+                            );
+                            },
                             ),
                           ),
-                          barGroups: [
-                            _chartData(0, 8, isSpecial: true),
-                            _chartData(1, 3),
-                            _chartData(2, 6),
-                            _chartData(3, 4),
-                            _chartData(4, 2),
-                            _chartData(5, 5),
-                            _chartData(6, 4),
-                          ],
                         ),
+                        barGroups: List.generate(moods.length, (i) {
+                          final mood = moods[i];
+
+                          return BarChartGroupData(
+                            x: i,
+                            barRods: [
+                            BarChartRodData(
+                              toY: (mood['mood_level'] ?? 0).toDouble(),
+                              width: 8,
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+
+                            BarChartRodData(
+                              toY: (mood['stress_level'] ?? 0).toDouble(),
+                              width: 8,
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ],
+                          );
+                        }),
                       ),
                     ),
+                  ),
                   ],
                 ),
               ),
@@ -189,61 +465,54 @@ class _MoodPageState extends State<MoodPage> {
       ),
     );
   }
-
-  BarChartGroupData _chartData(int x, double y, {bool isSpecial = false}) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: isSpecial ? const Color(0xFF1B5E20) : const Color(0xFF1A73E8),
-          width: 8,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      ],
-    );
-  }
 }
 
-class _MoodEmoji extends StatelessWidget {
-  final String emoji, label;
-  const _MoodEmoji({required this.emoji, required this.label});
+  class _MoodEmoji extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final bool isSelected;
+
+  const _MoodEmoji({
+    required this.emoji,
+    required this.label,
+    required this.isSelected,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 30)),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    const Color(0xFF1A8A7A).withOpacity(0.3),
+                    const Color(0xFF23A18F).withOpacity(0.2),
+                  ],
+                )
+              : null,
+        ),
+          child: Text(
+            emoji,
+            style: const TextStyle(fontSize: 30),
+          ),
+        ),
         const SizedBox(height: 5),
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.grey,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _EnergyBtn extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  const _EnergyBtn({required this.label, required this.isSelected, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00796B) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? Colors.transparent : Colors.grey[300]!),
-        ),
-        child: Center(
-          child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontSize: 12)),
-        ),
-      ),
-    );
-  }
-}
 
 class _Legend extends StatelessWidget {
   final Color color;

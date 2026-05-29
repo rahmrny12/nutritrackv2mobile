@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:nutritrack/auth_store.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -224,24 +227,36 @@ class _LoginPageState extends State<LoginPage> {
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Handle sign in
-                            if (_acceptTerms) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Signing in...'),
-                                  backgroundColor: Color(0xFF1ABC9C),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please accept terms first'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: () async {
+                          if (_acceptTerms) {
+                            final response = await http.post(
+                              Uri.parse("http://192.168.1.120:8000/api/login"),
+                              headers: {
+                                "Accept": "application/json",
+                                "Content-Type": "application/json",
+                              },
+                              body: jsonEncode({
+                                "email": _usernameController.text,
+                                "password": _passwordController.text,
+                              }),
+                            );
+
+                            final data = jsonDecode(response.body);
+
+                            AuthStore.token = data['token'];
+
+                            print("TOKEN: ${AuthStore.token}");
+
+                            Navigator.pushReplacementNamed(context, '/bmi');
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please accept terms first'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1ABC9C),
                             foregroundColor: Colors.white,

@@ -46,7 +46,7 @@ class _MainAppState extends State<MainApp> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: _themeViewModel.currentTheme,
-          initialRoute: Routes.auth,
+          initialRoute: Routes.mood,
           onGenerateRoute: RouteGenerator.generateRoute,
         );
       },
