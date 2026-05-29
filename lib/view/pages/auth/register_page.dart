@@ -88,208 +88,230 @@ class _RegisterPageState extends State<RegisterPage> {
               ), // lebih kecil biar natural
             ),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // TITLE
-                  const Text(
-                    'Registrasi',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111111),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Buat akun baru untuk mulai melacak nutrisi harianmu',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF9E9E9E)),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Nama
-                  _buildField(
-                    label: 'Nama Lengkap',
-                    hint: 'Masukkan Nama Lengkap',
-                    controller: viewModel.nameController,
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? 'Nama tidak boleh kosong'
-                        : null,
-                  ),
-
-                  // Email
-                  _buildField(
-                    label: 'Email',
-                    hint: 'Masukkan Email',
-                    controller: viewModel.emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty)
-                        return 'Email tidak boleh kosong';
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                      if (!emailRegex.hasMatch(v))
-                        return 'Format email tidak valid';
-                      return null;
-                    },
-                  ),
-
-                  // Username
-                  _buildField(
-                    label: 'Username',
-                    hint: 'Masukkan Username',
-                    controller: viewModel.usernameController,
-                    validator: (v) => v == null || v.trim().isEmpty
-                        ? 'Username tidak boleh kosong'
-                        : null,
-                  ),
-
-                  // Password
-                  _buildPasswordField(
-                    label: 'Kata Sandi',
-                    hint: 'Masukkan Kata Sandi',
-                    controller: viewModel.passwordController,
-                    isVisible: _showPassword,
-                    onToggle: () =>
-                        setState(() => _showPassword = !_showPassword),
-                    validator: (v) {
-                      if (v == null || v.isEmpty)
-                        return 'Kata sandi tidak boleh kosong';
-                      if (v.length < 6) return 'Minimal 6 karakter';
-                      return null;
-                    },
-                  ),
-
-                  // Konfirmasi
-                  _buildPasswordField(
-                    label: 'Konfirmasi Kata Sandi',
-                    hint: 'Masukkan Konfirmasi Kata Sandi',
-                    controller: viewModel.passwordConfirmController,
-                    isVisible: _showKonfirmasi,
-                    onToggle: () =>
-                        setState(() => _showKonfirmasi = !_showKonfirmasi),
-                    validator: (v) {
-                      if (v == null || v.isEmpty)
-                        return 'Konfirmasi tidak boleh kosong';
-                      if (v != viewModel.passwordController.text)
-                        return 'Kata sandi tidak cocok';
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // BUTTON REGISTER
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _handleSubmit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        'Daftar',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Row(
-                    children: const [
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.8,
-                          color: Color(0xFFE0E0E0),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'Atau',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF9E9E9E),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          thickness: 0.8,
-                          color: Color(0xFFE0E0E0),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // ───── Google Button ─────
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _handleGoogle,
-                      icon: Icon(Icons.account_circle),
-                      label: const Text(
-                        'Lanjutkan dengan Google',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF7F7F7),
-                        side: const BorderSide(color: Color(0xFFE0E0E0)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // ───── Footer ─────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: ValueListenableBuilder(
+              valueListenable: viewModel,
+              builder: (context, state, _) {
+                return Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // TITLE
                       const Text(
-                        'Sudah punya akun? ',
+                        'Registrasi',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF111111),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Buat akun baru untuk mulai melacak nutrisi harianmu',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF9E9E9E),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          // navigate login
+                      const SizedBox(height: 24),
+
+                      // Nama
+                      _buildField(
+                        label: 'Nama Lengkap',
+                        hint: 'Masukkan Nama Lengkap',
+                        controller: viewModel.nameController,
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Nama tidak boleh kosong'
+                            : null,
+                      ),
+
+                      // Email
+                      _buildField(
+                        label: 'Email',
+                        hint: 'Masukkan Email',
+                        controller: viewModel.emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty)
+                            return 'Email tidak boleh kosong';
+                          final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                          if (!emailRegex.hasMatch(v))
+                            return 'Format email tidak valid';
+                          return null;
                         },
-                        child: const Text(
-                          'Masuk',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: teal,
-                            fontWeight: FontWeight.w600,
+                      ),
+
+                      // Username
+                      _buildField(
+                        label: 'Username',
+                        hint: 'Masukkan Username',
+                        controller: viewModel.usernameController,
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Username tidak boleh kosong'
+                            : null,
+                      ),
+
+                      // Password
+                      _buildPasswordField(
+                        label: 'Kata Sandi',
+                        hint: 'Masukkan Kata Sandi',
+                        controller: viewModel.passwordController,
+                        isVisible: _showPassword,
+                        onToggle: () =>
+                            setState(() => _showPassword = !_showPassword),
+                        validator: (v) {
+                          if (v == null || v.isEmpty)
+                            return 'Kata sandi tidak boleh kosong';
+                          if (v.length < 6) return 'Minimal 6 karakter';
+                          return null;
+                        },
+                      ),
+
+                      // Konfirmasi
+                      _buildPasswordField(
+                        label: 'Konfirmasi Kata Sandi',
+                        hint: 'Masukkan Konfirmasi Kata Sandi',
+                        controller: viewModel.passwordConfirmController,
+                        isVisible: _showKonfirmasi,
+                        onToggle: () =>
+                            setState(() => _showKonfirmasi = !_showKonfirmasi),
+                        validator: (v) {
+                          if (v == null || v.isEmpty)
+                            return 'Konfirmasi tidak boleh kosong';
+                          if (v != viewModel.passwordController.text)
+                            return 'Kata sandi tidak cocok';
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // BUTTON REGISTER
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: viewModel.value.isLoading
+                              ? null
+                              : _handleSubmit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: teal,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: teal.withOpacity(0.6),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: viewModel.value.isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Daftar',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: const [
+                          Expanded(
+                            child: Divider(
+                              thickness: 0.8,
+                              color: Color(0xFFE0E0E0),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'Atau',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9E9E9E),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              thickness: 0.8,
+                              color: Color(0xFFE0E0E0),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // ───── Google Button ─────
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _handleGoogle,
+                          icon: Icon(Icons.account_circle),
+                          label: const Text(
+                            'Lanjutkan dengan Google',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF333333),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF7F7F7),
+                            side: const BorderSide(color: Color(0xFFE0E0E0)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 24),
+
+                      // ───── Footer ─────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Sudah punya akun? ',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF9E9E9E),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              // navigate login
+                            },
+                            child: const Text(
+                              'Masuk',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: teal,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),

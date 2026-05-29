@@ -19,7 +19,7 @@ class ScreeningRepository {
 
     if (statusCode != 200 && statusCode != 201) {
       throw Exception(
-        data['message'] ?? 'Failed to save screening result',
+        response['message'] ?? 'Gagal menyimpan hasil screening',
       );
     }
 
@@ -42,7 +42,7 @@ class ScreeningRepository {
 
     if (statusCode != 200) {
       throw Exception(
-        data['message'] ?? 'Failed to load screening result',
+        response['message'] ?? 'Failed to load screening result',
       );
     }
 

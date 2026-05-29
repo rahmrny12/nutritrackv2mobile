@@ -8,13 +8,9 @@ class AuthViewModel extends ValueNotifier<AuthState> {
   AuthViewModel({required this.repo}) : super(AuthState());
 
   final nameController = TextEditingController();
-  final emailController = TextEditingController(
-    text: "yeza@gmail.com"
-  );
+  final emailController = TextEditingController(text: "yeza@gmail.com");
   final usernameController = TextEditingController();
-  final passwordController = TextEditingController(
-    text: "asdasdasd"
-  );
+  final passwordController = TextEditingController(text: "asdasdasd");
   final passwordConfirmController = TextEditingController();
   final otpController = TextEditingController();
 
@@ -52,7 +48,12 @@ class AuthViewModel extends ValueNotifier<AuthState> {
   }
 
   Future<void> verifyOtp(String email) async {
-    value = value.copyWith(isLoading: true, error: null, otpMessage: null, otpSuccess: false);
+    value = value.copyWith(
+      isLoading: true,
+      error: null,
+      otpMessage: null,
+      otpSuccess: false,
+    );
 
     try {
       final res = await repo.verifyOtp(
@@ -61,11 +62,30 @@ class AuthViewModel extends ValueNotifier<AuthState> {
       );
 
       final msg = res['message']?.toString();
-      final success = (res['success'] is bool) ? res['success'] as bool : (res['token'] != null);
+      final success = (res['statusCode'] == 200);
 
-      value = value.copyWith(isLoading: false, otpSuccess: success, otpMessage: msg);
+      value = value.copyWith(
+        isLoading: false,
+        otpSuccess: success,
+        otpMessage: msg,
+      );
     } catch (e) {
       value = value.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  Future<void> resendOtp(String email) async {
+    value = value.copyWith(isLoading: true, error: null);
+    notifyListeners();
+
+    try {
+      final result = await repo.resendOtp(email);
+
+      value = value.copyWith(isLoading: false, otpMessage: result['message']);
+    } catch (e) {
+      value = value.copyWith(isLoading: false, error: e.toString());
+    }
+
+    notifyListeners();
   }
 }
