@@ -160,7 +160,7 @@ class LogFoodViewModel extends ValueNotifier<LogFoodState> {
     }
   }
 
-  Future<bool> saveMealLog({String mealType = 'Lunch'}) async {
+  Future<bool> saveMealLog({String? mealType}) async {
     value = value.copyWith(isLoading: true, error: null, message: null);
 
     if (value.selectedFoods.isEmpty && value.selectedRecipes.isEmpty) {
@@ -172,36 +172,35 @@ class LogFoodViewModel extends ValueNotifier<LogFoodState> {
     }
 
     try {
-      final mealLogResponse = await mealLogRepo.createMealLog(mealType: mealType);
-      final mealLogId = mealLogResponse['data']?['id'];
+      final foods = <Map<String, dynamic>>[];
 
-      if (mealLogId == null) {
-        throw Exception('Meal log tidak berhasil dibuat.');
-      }
-
+      // ingredients
       for (final food in value.selectedFoods) {
-        await mealLogRepo.addFood(
-          mealLogId: mealLogId as int,
-          type: 'ingredient',
-          ingredientId: food.id,
-          quantity: food.portion?.toInt() ?? 100,
-        );
+        foods.add({
+          'type': 'ingredient',
+          'ingredient_id': food.id,
+          'quantity': food.portion?.toInt() ?? 100,
+        });
       }
 
+      // recipes
       for (final recipe in value.selectedRecipes) {
-        await mealLogRepo.addFood(
-          mealLogId: mealLogId as int,
-          type: 'recipe',
-          recipeId: recipe.id,
-          quantity: 1,
-        );
+        foods.add({'type': 'recipe', 'recipe_id': recipe.id, 'quantity': 1});
       }
+
+      await mealLogRepo.createMealLogWithFoods(
+        mealType: mealType,
+        foods: foods,
+      );
 
       value = value.copyWith(
         isLoading: false,
         message: 'Log makanan berhasil disimpan.',
         error: null,
+        selectedFoods: [],
+        selectedRecipes: [],
       );
+
       return true;
     } catch (e) {
       value = value.copyWith(isLoading: false, error: e.toString());

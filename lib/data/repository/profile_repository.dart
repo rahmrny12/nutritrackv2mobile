@@ -18,32 +18,59 @@ class ProfileRepository {
     }
 
     if (statusCode != 200) {
-      throw Exception(data['message'] ?? "Failed to load profile");
+      throw Exception(
+        data['message'] ?? "Failed to load profile",
+      );
     }
 
-    return ProfileModel.fromJson(data);
+    final profile = ProfileModel.fromJson(data);
+
+    // sync local storage
+    await LocalStorage.saveProfile(profile.toJson());
+
+    return profile;
   }
 
   Future<ProfileModel> updateProfile({
-    required double tinggiBadan,
-    required double beratBadan,
-    required double? lingkarPinggang,
-    required int usia,
-    required String jenisKelamin,
+    required double height,
+    required double weight,
+
+    required double? waistCircumference,
+    required double? hipCircumference,
+
+    required int age,
+
+    required String gender,
+
+    required String activityLevel,
+    required String goal,
   }) async {
     final response = await api.post('/profile', {
-      "tinggi_badan": tinggiBadan,
-      "berat_badan": beratBadan,
-      "lingkar_pinggang": lingkarPinggang,
-      "usia": usia,
-      "jenis_kelamin": jenisKelamin,
+      "height": height,
+      "weight": weight,
+
+      "waist_circumference": waistCircumference,
+      "hip_circumference": hipCircumference,
+
+      "age": age,
+      "gender": gender,
+
+      "activity_level": activityLevel,
+      "goal": goal,
     });
 
-    final profileJson = response['data'] ?? response;
+    final statusCode = response['statusCode'];
+    final data = response['data'];
 
-    final profile = ProfileModel.fromJson(profileJson);
+    if (statusCode != 200 && statusCode != 201) {
+      throw Exception(
+        data?['message'] ?? 'Failed to update profile',
+      );
+    }
 
-    // simpan ke local storage (pakai toJson)
+    final profile = ProfileModel.fromJson(data);
+
+    // save latest profile locally
     await LocalStorage.saveProfile(profile.toJson());
 
     return profile;

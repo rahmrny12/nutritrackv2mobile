@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/core/route_generator.dart';
+import 'package:nutritrack/data/models/ingredient_model.dart';
 import 'package:nutritrack/view/viewmodel/log_food_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/log_food_state.dart';
 
@@ -10,7 +11,7 @@ class ConfirmLogFood extends StatefulWidget {
   const ConfirmLogFood({
     super.key,
     required this.viewModel,
-    this.mealType = 'Lunch',
+    this.mealType = 'lunch',
   });
 
   @override
@@ -49,13 +50,23 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
       return;
     }
 
-    final success = await _viewModel.saveMealLog(mealType: widget.mealType);
+    final success = await _viewModel.saveMealLog();
 
     if (!mounted) return;
 
     if (success) {
+      final message = _viewModel.value.message ?? 'Berhasil disimpan';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.green),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 400));
+
       _viewModel.clearState();
+
       Navigator.pushNamedAndRemoveUntil(context, Routes.main, (_) => false);
+
       return;
     }
 
@@ -345,7 +356,7 @@ class _ConfirmLogFoodState extends State<ConfirmLogFood> {
     );
   }
 
-  Widget _buildIngredientCard(ingredient) {
+  Widget _buildIngredientCard(IngredientModel ingredient) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/repository/profile_repository.dart';
-import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/core/api_service.dart';
-import 'package:nutritrack/view/pages/main_page.dart';
 import 'package:nutritrack/view/viewmodel/profile_view_model.dart';
 
 class BMIPage extends StatefulWidget {
@@ -19,20 +18,25 @@ class _BMIPageState extends State<BMIPage> {
   @override
   void initState() {
     super.initState();
+
     viewModel = ProfileViewModel(ProfileRepository(ApiService()));
 
     viewModel.getProfile();
 
     viewModel.addListener(() {
       final profile = viewModel.value.profile;
+
       if (profile == null) return;
 
-      _bbController.text = profile.beratBadan?.toString() ?? '';
-      _tbController.text = profile.tinggiBadan?.toString() ?? '';
-      _usiaController.text = profile.usia?.toString() ?? '';
-      _lingkarController.text = profile.lingkarPinggang?.toString() ?? '';
+      _bbController.text = profile.weight?.toString() ?? '';
 
-      _selectedGender = profile.jenisKelamin == 'P' ? 'perempuan' : 'laki';
+      _tbController.text = profile.height?.toString() ?? '';
+
+      _usiaController.text = profile.age?.toString() ?? '';
+
+      _lingkarController.text = profile.waistCircumference?.toString() ?? '';
+
+      _selectedGender = profile.gender ?? 'L';
 
       setState(() {});
     });
@@ -42,7 +46,8 @@ class _BMIPageState extends State<BMIPage> {
   final _tbController = TextEditingController();
   final _usiaController = TextEditingController();
   final _lingkarController = TextEditingController();
-  String _selectedGender = 'laki';
+
+  String _selectedGender = 'L';
 
   @override
   void dispose() {
@@ -50,6 +55,7 @@ class _BMIPageState extends State<BMIPage> {
     _tbController.dispose();
     _usiaController.dispose();
     _lingkarController.dispose();
+
     super.dispose();
   }
 
@@ -63,15 +69,20 @@ class _BMIPageState extends State<BMIPage> {
           backgroundColor: Colors.red,
         ),
       );
+
       return;
     }
 
     try {
-      viewModel.beratController.text = _bbController.text;
-      viewModel.tinggiController.text = _tbController.text;
-      viewModel.usiaController.text = _usiaController.text;
-      viewModel.lingkarController.text = _lingkarController.text;
-      viewModel.gender = _selectedGender == 'laki' ? 'L' : 'P';
+      viewModel.weightController.text = _bbController.text;
+
+      viewModel.heightController.text = _tbController.text;
+
+      viewModel.ageController.text = _usiaController.text;
+
+      viewModel.waistController.text = _lingkarController.text;
+
+      viewModel.gender = _selectedGender;
 
       await viewModel.updateProfile();
 
@@ -82,6 +93,7 @@ class _BMIPageState extends State<BMIPage> {
             backgroundColor: Colors.red,
           ),
         );
+
         return;
       }
 
@@ -92,10 +104,7 @@ class _BMIPageState extends State<BMIPage> {
         ),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainPage()),
-      );
+      Navigator.pushNamed(context, Routes.activity);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -111,14 +120,11 @@ class _BMIPageState extends State<BMIPage> {
         child: Column(
           children: [
             Stack(
-              clipBehavior:
-                  Clip.none, // Allows the card to "hang" outside the stack
+              clipBehavior: Clip.none,
               alignment: Alignment.topCenter,
               children: [
-                // 1. The Header
                 _buildHeader(),
 
-                // 2. The Card (Positioned to overlap)
                 Padding(
                   padding: const EdgeInsets.only(
                     top: 180,
@@ -146,7 +152,9 @@ class _BMIPageState extends State<BMIPage> {
                               color: Color(0xFF0D3D38),
                             ),
                           ),
+
                           const SizedBox(height: 24),
+
                           _buildForm(),
                         ],
                       ),
@@ -175,13 +183,11 @@ class _BMIPageState extends State<BMIPage> {
       child: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(62.0), // Give it some breathing room
+            padding: const EdgeInsets.all(62.0),
             child: SizedBox.expand(
-              // This forces the child to fill the parent
               child: Image.asset(
                 "assets/images/logo_nutritrack_horizontal.png",
-                fit: BoxFit
-                    .contain, // Makes the image as large as possible without cropping
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -208,7 +214,9 @@ class _BMIPageState extends State<BMIPage> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: _buildField(
                     label: 'Tinggi Badan (cm)',
@@ -220,19 +228,23 @@ class _BMIPageState extends State<BMIPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
+
             Row(
               children: [
                 Expanded(
                   child: _buildField(
-                    label: 'Lingkar Pinggang (Opsional)', // Added label text
+                    label: 'Lingkar Pinggang (Opsional)',
                     hint: 'Dalam cm',
                     controller: _lingkarController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 Expanded(
                   child: _buildField(
                     label: 'Usia',
@@ -244,9 +256,13 @@ class _BMIPageState extends State<BMIPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
+
             _buildGenderField(),
+
             const SizedBox(height: 32),
+
             _buildSubmitButton(viewModel.value.isLoading),
           ],
         );
@@ -272,7 +288,9 @@ class _BMIPageState extends State<BMIPage> {
             color: Color(0xFF1F3330),
           ),
         ),
+
         const SizedBox(height: 7),
+
         TextField(
           controller: controller,
           keyboardType: keyboardType,
@@ -315,12 +333,16 @@ class _BMIPageState extends State<BMIPage> {
             color: Color(0xFF1F3330),
           ),
         ),
+
         const SizedBox(height: 12),
+
         Row(
           children: [
-            _buildRadioOption(label: 'Laki-laki', value: 'laki'),
+            _buildRadioOption(label: 'Laki-laki', value: 'L'),
+
             const SizedBox(width: 32),
-            _buildRadioOption(label: 'Perempuan', value: 'perempuan'),
+
+            _buildRadioOption(label: 'Perempuan', value: 'P'),
           ],
         ),
       ],
@@ -329,8 +351,13 @@ class _BMIPageState extends State<BMIPage> {
 
   Widget _buildRadioOption({required String label, required String value}) {
     final bool isSelected = _selectedGender == value;
+
     return GestureDetector(
-      onTap: () => setState(() => _selectedGender = value),
+      onTap: () {
+        setState(() {
+          _selectedGender = value;
+        });
+      },
       child: Row(
         children: [
           AnimatedContainer(
@@ -351,7 +378,9 @@ class _BMIPageState extends State<BMIPage> {
                 ? const Icon(Icons.check, size: 12, color: Colors.white)
                 : null,
           ),
+
           const SizedBox(width: 8),
+
           Text(
             label,
             style: TextStyle(
@@ -376,13 +405,6 @@ class _BMIPageState extends State<BMIPage> {
           colors: [Color(0xFF165F57), Color(0xFF23A18F)],
         ),
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E7B6E).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: ElevatedButton(
         onPressed: isLoading ? null : _handleSubmit,

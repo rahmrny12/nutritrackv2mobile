@@ -215,6 +215,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const Text(
                             'Verifikasi OTP',
@@ -236,7 +237,9 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
 
                           // 6-digit OTP boxes
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: List.generate(_otpLength, (i) {
                               final isLast = i == _otpLength - 1;
                               return _OtpBox(
@@ -451,9 +454,10 @@ class _OtpBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: 44,
       height: 54,
+      padding: const EdgeInsets.only(right: 4),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
