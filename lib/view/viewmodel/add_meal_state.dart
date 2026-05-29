@@ -36,7 +36,7 @@ class RecipeIngredientItem {
   }
 }
 
-class AddMealState {
+class MealState {
   final String name;
   final String description;
   final int selectedCategory;
@@ -49,7 +49,7 @@ class AddMealState {
   final String? error;
   final bool success;
 
-  AddMealState({
+  MealState({
     this.name = '',
     this.description = '',
     this.selectedCategory = 0,
@@ -66,7 +66,7 @@ class AddMealState {
   int get totalKcal =>
       ingredients.fold(0, (sum, item) => sum + item.kcal);
 
-  AddMealState copyWith({
+  MealState copyWith({
     String? name,
     String? description,
     int? selectedCategory,
@@ -79,7 +79,7 @@ class AddMealState {
     String? error,
     bool? success,
   }) {
-    return AddMealState(
+    return MealState(
       name: name ?? this.name,
       description: description ?? this.description,
       selectedCategory: selectedCategory ?? this.selectedCategory,

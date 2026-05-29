@@ -5,16 +5,16 @@ import 'package:nutritrack/data/repository/ingredient_repository.dart';
 import 'package:nutritrack/view/viewmodel/add_meal_state.dart';
 import 'package:nutritrack/view/viewmodel/add_meal_viewmodel.dart';
 
-class AddMealPage extends StatefulWidget {
-  const AddMealPage({super.key});
+class AddRecipePage extends StatefulWidget {
+  const AddRecipePage({super.key});
   @override
-  State<AddMealPage> createState() => _AddMealPageState();
+  State<AddRecipePage> createState() => _AddRecipePageState();
 }
 
-class _AddMealPageState extends State<AddMealPage> {
+class _AddRecipePageState extends State<AddRecipePage> {
   static const Color _teal = Color(0xFF2ABFB0);
 
-  late final AddMealViewModel viewModel;
+  late final MealViewModel viewModel;
 
   final List<String> _categories = ['Sarapan', 'Makan Siang', 'Makan Malam'];
   final List<IconData> _categoryIcons = [
@@ -26,7 +26,7 @@ class _AddMealPageState extends State<AddMealPage> {
   @override
   void initState() {
     super.initState();
-    viewModel = AddMealViewModel(
+    viewModel = MealViewModel(
       recipeRepo: RecipeRepository(ApiService()),
       ingredientRepo: IngredientRepository(ApiService()),
     );
@@ -53,7 +53,7 @@ class _AddMealPageState extends State<AddMealPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<AddMealState>(
+    return ValueListenableBuilder<MealState>(
       valueListenable: viewModel,
       builder: (context, state, _) {
         return Scaffold(
@@ -183,7 +183,7 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   // ── Form Section ─────────────────────────
-  Widget _buildFormSection(AddMealState state) {
+  Widget _buildFormSection(MealState state) {
     return Container(
       color: Colors.white,
       margin: const EdgeInsets.only(top: 8),
@@ -397,7 +397,7 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   // ── Bahan Makanan ────────────────────────
-  Widget _buildBahanMakanan(AddMealState state) {
+  Widget _buildBahanMakanan(MealState state) {
     return Container(
       color: Colors.white,
       margin: const EdgeInsets.only(top: 8),
@@ -589,7 +589,7 @@ class _AddMealPageState extends State<AddMealPage> {
   Widget _buildBahanItem(
     RecipeIngredientItem bahan,
     int index,
-    AddMealState state,
+    MealState state,
   ) {
     final isInRecipe = state.ingredients.any(
       (item) => item.ingredientId == bahan.ingredientId,
@@ -699,7 +699,7 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   // ── Nutrition Summary ────────────────────
-  Widget _buildNutritionSummary(AddMealState state) {
+  Widget _buildNutritionSummary(MealState state) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -741,7 +741,7 @@ class _AddMealPageState extends State<AddMealPage> {
   }
 
   // ── Simpan Button ────────────────────────
-  Widget _buildSimpanButton(AddMealState state) {
+  Widget _buildSimpanButton(MealState state) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(

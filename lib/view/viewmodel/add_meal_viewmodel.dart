@@ -6,12 +6,12 @@ import 'package:nutritrack/data/repository/ingredient_repository.dart';
 import 'package:nutritrack/data/models/ingredient_model.dart';
 import 'add_meal_state.dart';
 
-class AddMealViewModel extends ValueNotifier<AddMealState> {
+class MealViewModel extends ValueNotifier<MealState> {
   final RecipeRepository recipeRepo;
   final IngredientRepository ingredientRepo;
 
-  AddMealViewModel({required this.recipeRepo, required this.ingredientRepo})
-    : super(AddMealState()) {
+  MealViewModel({required this.recipeRepo, required this.ingredientRepo})
+    : super(MealState()) {
     fetchIngredients();
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nutritrack/core/local_storage.dart';
+import 'package:nutritrack/view/pages/auth/activity_page.dart';
 import 'package:nutritrack/view/pages/auth/auth_page.dart';
 import 'package:nutritrack/view/pages/auth/bmi_page.dart';
 import 'package:nutritrack/view/pages/auth/login_page.dart';
@@ -7,7 +8,7 @@ import 'package:nutritrack/view/pages/auth/register_page.dart';
 import 'package:nutritrack/view/pages/auth/verify_otp_page.dart';
 import 'package:nutritrack/view/pages/dashboard_page.dart';
 import 'package:nutritrack/view/pages/edit_profile_page.dart';
-import 'package:nutritrack/view/pages/log_food/add_meal_page.dart';
+import 'package:nutritrack/view/pages/log_food/add_recipe_page.dart';
 import 'package:nutritrack/view/pages/log_food/confirm_log_food.dart';
 import 'package:nutritrack/view/pages/log_food/history_page.dart';
 import 'package:nutritrack/view/pages/log_food/initial_log_food.dart';
@@ -37,6 +38,7 @@ class Routes {
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String bmi = '/bmi';
+  static const String activity = '/activity';
   static const String mood = '/mood';
   static const String gout_screening = '/gout';
   static const String diabetes_screening = '/diabetes';
@@ -59,6 +61,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const VerifyOtpPage());
       case Routes.bmi:
         return MaterialPageRoute(builder: (_) => const BMIPage());
+      case Routes.activity:
+        return MaterialPageRoute(builder: (_) => const ActivityPage());
       case Routes.mood:
         return MaterialPageRoute(builder: (_) => const MoodPage());
       case Routes.gout_screening:
@@ -82,7 +86,7 @@ class RouteGenerator {
       case Routes.initialLogFood:
         return _protectedRoute(const InitialLogFood());
       case Routes.addMeal:
-        return _protectedRoute(const AddMealPage());
+        return _protectedRoute(const AddRecipePage());
       case Routes.profile:
         return _protectedRoute(const ProfilePage());
       case Routes.editProfile:

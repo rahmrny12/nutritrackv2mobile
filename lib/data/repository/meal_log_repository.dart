@@ -6,30 +6,6 @@ class MealLogRepository {
 
   MealLogRepository(this.api);
 
-  Future<Map<String, dynamic>> createMealLog({required String mealType}) async {
-    return await api.post('/meal-logs', {'meal_type': mealType});
-  }
-
-  Future<Map<String, dynamic>> addFood({
-    required int mealLogId,
-    required String type,
-    int? ingredientId,
-    int? recipeId,
-    required int quantity,
-  }) async {
-    final body = <String, dynamic>{'type': type, 'quantity': quantity};
-
-    if (ingredientId != null) {
-      body['ingredient_id'] = ingredientId;
-    }
-
-    if (recipeId != null) {
-      body['recipe_id'] = recipeId;
-    }
-
-    return await api.post('/meal-logs/$mealLogId/add-food', body);
-  }
-
   Future<List<MealLogModel>> fetchMealLogs({
     DateTime? startDate,
     DateTime? endDate,
@@ -59,5 +35,27 @@ class MealLogRepository {
     return data
         .map((item) => MealLogModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<MealLogModel> createMealLogWithFoods({
+    String? mealType,
+    required List<Map<String, dynamic>> foods,
+  }) async {
+    final res = await api.post('/meal-logs', {
+      'meal_type': mealType,
+      'foods': foods,
+    });
+
+    if (res['statusCode'] != 201 && res['statusCode'] != 200) {
+      throw Exception(res['message'] ?? 'Gagal menyimpan meal log');
+    }
+
+    final data = res['data'];
+
+    if (data == null || data is! Map<String, dynamic>) {
+      throw Exception('Response meal log tidak valid');
+    }
+
+    return MealLogModel.fromJson(data);
   }
 }

@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:nutritrack/core/local_storage.dart';
 
 class ApiService {
-  // final String baseUrl = "https://nutritrack.web.id/api";
-  final String baseUrl = "https://ef05-2402-8780-101a-30bc-4d41-8f5a-1de4-c23d.ngrok-free.app/api";
+  final String baseUrl = "https://nutritrack.web.id/api";
+  // final String baseUrl = "https://ef05-2402-8780-101a-30bc-4d41-8f5a-1de4-c23d.ngrok-free.app/api";
 
   // 🔹 COMMON HEADER
   Map<String, String> _headers({String? token}) {

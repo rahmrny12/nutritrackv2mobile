@@ -3,12 +3,11 @@ import 'package:nutritrack/core/api_service.dart';
 import 'package:nutritrack/core/local_storage.dart';
 import 'package:nutritrack/core/route_generator.dart';
 import 'package:nutritrack/data/models/profile_model.dart';
-import 'package:nutritrack/data/repository/profile_repository.dart';
 import 'package:nutritrack/data/models/screening_result_model.dart';
+import 'package:nutritrack/data/repository/profile_repository.dart';
 import 'package:nutritrack/data/repository/screening_repository.dart';
 import 'package:nutritrack/view/pages/edit_profile_page.dart';
 import 'package:nutritrack/view/pages/screening/screening_selection_page.dart';
-import 'package:nutritrack/view/viewmodel/navigation_viewmodel.dart';
 import 'package:nutritrack/view/viewmodel/profile_view_model.dart';
 import 'package:nutritrack/view/viewmodel/screening_state.dart';
 import 'package:nutritrack/view/viewmodel/screening_viewmodel.dart';
@@ -24,10 +23,11 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final ScrollController _scrollController = ScrollController();
+
   bool showCollapsedHeader = false;
 
   Map<String, dynamic>? _user;
-  Map<String, dynamic>? _profileLocation;
+
   late final ProfileViewModel _profileViewModel;
   late final ScreeningViewModel _screeningViewModel;
 
@@ -35,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadUser() async {
     final data = await LocalStorage.getUser();
+
     if (!mounted) return;
 
     setState(() {
@@ -42,18 +43,107 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  Future<void> _loadProfile() async {
-    final data = await LocalStorage.getProfile();
-    if (!mounted) return;
-
-    setState(() {
-      _profileLocation = data;
-    });
-  }
-
   Future<void> _loadScreening() async {
     await _screeningViewModel.fetchAllLatestResults();
   }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _profileViewModel = ProfileViewModel(ProfileRepository(ApiService()));
+
+    _screeningViewModel = ScreeningViewModel(ScreeningRepository(ApiService()));
+
+    _profileViewModel.addListener(_onProfileStateChanged);
+
+    _initialize();
+
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 120 && !showCollapsedHeader) {
+        setState(() => showCollapsedHeader = true);
+      } else if (_scrollController.offset <= 120 && showCollapsedHeader) {
+        setState(() => showCollapsedHeader = false);
+      }
+    });
+  }
+
+  Future<void> _initialize() async {
+    await Future.wait([
+      _loadUser(),
+      _profileViewModel.getProfile(),
+      _loadScreening(),
+    ]);
+  }
+
+  void _onProfileStateChanged() {
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+
+    super.dispose();
+  }
+
+  // ================= GETTERS =================
+
+  String get userName => _user?['name'] ?? 'Guest';
+
+  double get height => _profile?.height ?? 0;
+
+  double get weight => _profile?.weight ?? 0;
+
+  double get bmi => _profile?.bmi ?? 0;
+
+  double get bmr => _profile?.bmr ?? 0;
+
+  double get tdee => _profile?.tdee ?? 0;
+
+  double get targetCalories => _profile?.targetCalories ?? 0;
+
+  double get proteinTarget => _profile?.proteinTarget ?? 0;
+
+  double get fatTarget => _profile?.fatTarget ?? 0;
+
+  double get carbohydrateTarget => _profile?.carbohydrateTarget ?? 0;
+
+  int get age => _profile?.age ?? 0;
+
+  String get gender {
+    if (_profile?.gender == 'L') {
+      return 'Laki-laki';
+    }
+
+    return 'Perempuan';
+  }
+
+  String get activityLevel {
+    switch (_profile?.activityLevel) {
+      case 'sedentary':
+        return 'Sangat Jarang Aktivitas';
+
+      case 'light':
+        return 'Aktivitas Ringan';
+
+      case 'moderate':
+        return 'Aktivitas Sedang';
+
+      case 'active':
+        return 'Aktivitas Aktif';
+
+      case 'very_active':
+        return 'Sangat Aktif';
+
+      default:
+        return '-';
+    }
+  }
+
+  // ================= HELPERS =================
 
   Color _levelColor(String? level) {
     switch (level?.toLowerCase()) {
@@ -71,43 +161,29 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _profileViewModel = ProfileViewModel(ProfileRepository(ApiService()));
-    _profileViewModel.addListener(_onProfileStateChanged);
-    _screeningViewModel = ScreeningViewModel(ScreeningRepository(ApiService()));
-    _loadUser();
-    _loadProfile();
-    _profileViewModel.getProfile();
-    _loadScreening();
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 120 && !showCollapsedHeader) {
-        setState(() => showCollapsedHeader = true);
-      } else if (_scrollController.offset <= 120 && showCollapsedHeader) {
-        setState(() => showCollapsedHeader = false);
-      }
-    });
+  String _screeningTypeLabel(String? type) {
+    switch (type) {
+      case 'gout':
+        return 'Skrining Asam Urat';
+
+      case 'diabetes':
+        return 'Skrining Diabetes';
+
+      case 'heart':
+        return 'Skrining Jantung';
+
+      default:
+        return 'Skrining';
+    }
   }
 
-  void _onProfileStateChanged() {
-    if (!mounted) return;
-    setState(() {});
+  String _formatScreeningDate(ScreeningResultModel screening) {
+    final date = screening.timestamp.toLocal();
+
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  String get userName => _user?['name'] ?? 'Guest';
-
-  double get height => _profile?.tinggiBadan ?? 0;
-  double get weight => _profile?.beratBadan ?? 0;
-  double get bmi => _profile?.bmi ?? 0;
-  String get location => _profileLocation?['location'] ?? 'Unknown';
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _screeningViewModel.dispose();
-    super.dispose();
-  }
+  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
@@ -123,19 +199,32 @@ class _ProfilePageState extends State<ProfilePage> {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 _buildSliverAppBar(),
+
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
                         const SizedBox(height: 20),
+
+                        _buildProfileInfoCard(),
+
+                        const SizedBox(height: 16),
+
                         _buildScreeningSummaryCard(screeningState),
+
                         const SizedBox(height: 16),
-                        _buildDailyCaloriesCard(),
+
+                        _buildNutritionTargetCard(),
+
                         const SizedBox(height: 16),
-                        _buildPremiumCard(context),
+
+                        _buildPremiumCard(),
+
                         const SizedBox(height: 20),
+
                         _buildLogoutButton(),
+
                         const SizedBox(height: 30),
                       ],
                     ),
@@ -148,6 +237,8 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
+
+  // ================= APP BAR =================
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
@@ -174,7 +265,9 @@ class _ProfilePageState extends State<ProfilePage> {
               backgroundColor: Colors.white,
               child: Icon(Icons.person, color: Color(0xFF2ABFB0), size: 20),
             ),
+
             const SizedBox(width: 10),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +276,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     'Halo, $userName',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
+
                   const SizedBox(height: 2),
+
                   const Text(
                     'Profil Saya',
                     style: TextStyle(
@@ -195,15 +290,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.notifications_none, color: Colors.white),
-            ),
           ],
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        stretchModes: const [StretchMode.zoomBackground],
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -217,21 +307,20 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           child: SafeArea(
-            bottom: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
+
                   Row(
                     children: [
                       Container(
                         width: 72,
                         height: 72,
                         decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
                           color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.person,
@@ -239,19 +328,23 @@ class _ProfilePageState extends State<ProfilePage> {
                           color: Color(0xFF2ABFB0),
                         ),
                       ),
+
                       const SizedBox(width: 14),
+
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Selamat pagi,',
+                              'Selamat datang,',
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
                               ),
                             ),
+
                             const SizedBox(height: 6),
+
                             Text(
                               userName,
                               style: const TextStyle(
@@ -260,17 +353,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              location,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
                           ],
                         ),
                       ),
+
                       GestureDetector(
                         onTap: () async {
                           final updated = await Navigator.push<bool>(
@@ -281,9 +367,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
 
                           if (!mounted) return;
+
                           if (updated == true) {
-                            await _loadUser();
-                            await _loadProfile();
+                            await _onRefresh();
                           }
                         },
                         child: Container(
@@ -304,7 +390,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 22),
+
                   Row(
                     children: [
                       Expanded(
@@ -315,7 +403,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               : '-',
                         ),
                       ),
+
                       const SizedBox(width: 12),
+
                       Expanded(
                         child: _buildProfileMetric(
                           label: 'Berat',
@@ -324,7 +414,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               : '-',
                         ),
                       ),
+
                       const SizedBox(width: 12),
+
                       Expanded(
                         child: _buildProfileMetric(
                           label: 'BMI',
@@ -360,7 +452,9 @@ class _ProfilePageState extends State<ProfilePage> {
               fontWeight: FontWeight.w600,
             ),
           ),
+
           const SizedBox(height: 6),
+
           Text(
             value,
             style: const TextStyle(
@@ -368,6 +462,83 @@ class _ProfilePageState extends State<ProfilePage> {
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= PROFILE INFO =================
+
+  Widget _buildProfileInfoCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Informasi Profil',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoChip(
+                  icon: Icons.cake_outlined,
+                  label: 'Usia: $age Tahun',
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: _buildInfoChip(
+                  icon: Icons.person_outline,
+                  label: gender,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoChip(
+                  icon: Icons.local_fire_department_outlined,
+                  label: 'BMR: ${bmr.toStringAsFixed(0)} kcal',
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: _buildInfoChip(
+                  icon: Icons.directions_run,
+                  label: activityLevel,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          _buildInfoChip(
+            icon: Icons.bolt_outlined,
+            label: 'TDEE: ${tdee.toStringAsFixed(0)} kcal',
           ),
         ],
       ),
@@ -392,7 +563,9 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Icon(icon, size: 18, color: const Color(0xFF2ABFB0)),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Text(
               label,
@@ -408,11 +581,15 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // ================= SCREENING =================
+
   Widget _buildScreeningSummaryCard(ScreeningState state) {
     final screening = state.latestResult;
+
     final screeningType = screening?.screeningType;
     final screeningLevel = screening?.level;
     final screeningScore = screening?.totalScore.toString();
+
     final screeningDate = screening != null
         ? _formatScreeningDate(screening)
         : null;
@@ -440,26 +617,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF1A1A2E),
-                letterSpacing: -0.2,
               ),
             ),
+
             const SizedBox(height: 12),
+
             if (state.status == ScreeningStatus.loading) ...[
-              const Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
-                ),
-              ),
+              const Center(child: CircularProgressIndicator()),
             ] else if (state.errorMessage != null) ...[
               Text(
-                'Gagal memuat hasil skrining: ${state.errorMessage}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFFEF4444),
-                  height: 1.4,
-                ),
+                state.errorMessage!,
+                style: const TextStyle(color: Colors.red),
               ),
             ] else if (screening != null) ...[
               Text.rich(
@@ -472,6 +640,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+
                     TextSpan(
                       text: screeningLevel ?? '-',
                       style: TextStyle(
@@ -481,18 +650,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ],
                 ),
-                style: const TextStyle(fontSize: 14),
               ),
-              const SizedBox(height: 8),
+
+              const SizedBox(height: 10),
+
               Row(
                 children: [
                   Expanded(
                     child: _buildInfoChip(
-                      icon: Icons.check_circle_outline,
+                      icon: Icons.score_outlined,
                       label: 'Skor: ${screeningScore ?? '-'}',
                     ),
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: _buildInfoChip(
                       icon: Icons.calendar_today,
@@ -502,14 +674,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ] else ...[
-              const Text(
-                'Belum ada hasil skrining tersimpan. Lakukan skrining untuk melihat ringkasan di sini.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  height: 1.4,
-                ),
-              ),
+              const Text('Belum ada hasil skrining.'),
             ],
           ],
         ),
@@ -517,212 +682,248 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  String _screeningTypeLabel(String? type) {
-    switch (type) {
-      case 'gout':
-        return 'Skrining Asam Urat';
-      case 'diabetes':
-        return 'Skrining Diabetes';
-      case 'heart':
-        return 'Skrining Jantung';
-      default:
-        return 'Skrining';
-    }
-  }
+  // ================= NUTRITION =================
 
-  String _formatScreeningDate(ScreeningResultModel screening) {
-    final date = screening.timestamp.toLocal();
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  // ================= DAILY CALORIES CARD =================
-  Widget _buildDailyCaloriesCard() {
+  Widget _buildNutritionTargetCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Nutrisi Harian',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E),
-                  letterSpacing: -0.2,
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F8F6),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.restaurant_menu_rounded,
+                  color: Color(0xFF2ABFB0),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FBF4),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.restaurant_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 20,
+
+              const SizedBox(width: 12),
+
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Target Nutrisi Harian',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+
+                    SizedBox(height: 2),
+
+                    Text(
+                      'Kebutuhan harian berdasarkan profil tubuh',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          _buildNutrientRow(
-            label: 'Kalori',
-            value: '1850 kcal',
-            progress: 0.75,
-            color: const Color.fromARGB(255, 198, 45, 45),
+
+          const SizedBox(height: 22),
+
+          // ================= KALORI =================
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2ABFB0), Color(0xFF1FA89A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Kalori Harian',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        '${targetCalories.toStringAsFixed(0)} kcal',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _buildNutrientRow(
-            label: 'Protein',
-            value: '75 g',
-            progress: 0.55,
-            color: const Color(0xFF4A90D9),
-          ),
-          const SizedBox(height: 16),
-          _buildNutrientRow(
-            label: 'Lemak',
-            value: '62 g',
-            progress: 0.40,
-            color: const Color(0xFFFFA500),
-          ),
-          const SizedBox(height: 16),
-          _buildNutrientRow(
-            label: 'Karbohidrat',
-            value: '230 g',
-            progress: 0.80,
-            color: const Color(0xFF2DC653),
+
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildMacroCard(
+                  title: 'Protein',
+                  value: '${proteinTarget.toStringAsFixed(1)} g',
+                  icon: Icons.fitness_center_rounded,
+                  bgColor: const Color(0xFFEAF2FF),
+                  iconColor: const Color(0xFF3B82F6),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: _buildMacroCard(
+                  title: 'Lemak',
+                  value: '${fatTarget.toStringAsFixed(1)} g',
+                  icon: Icons.opacity_rounded,
+                  bgColor: const Color(0xFFFFF4E8),
+                  iconColor: const Color(0xFFF59E0B),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: _buildMacroCard(
+                  title: 'Karbo',
+                  value: '${carbohydrateTarget.toStringAsFixed(1)} g',
+                  icon: Icons.rice_bowl_rounded,
+                  bgColor: const Color(0xFFECFDF3),
+                  iconColor: const Color(0xFF22C55E),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNutrientRow({
-    required String label,
+  Widget _buildMacroCard({
+    required String title,
     required String value,
-    required double progress,
-    required Color color,
+    required IconData icon,
+    required Color bgColor,
+    required Color iconColor,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
             ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF1A1A2E),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 7,
-            backgroundColor: const Color(0xFFF0F0F0),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
+            child: Icon(icon, color: iconColor, size: 22),
           ),
-        ),
-      ],
+
+          const SizedBox(height: 12),
+
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF111827),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // ================= PREMIUM CARD =================
-  Widget _buildPremiumCard(BuildContext context) {
+  // ================= PREMIUM =================
+
+  Widget _buildPremiumCard() {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1A1A2E).withOpacity(0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFA500),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: const Text(
-                  'PREMIUM',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.stars_rounded,
-                color: Color(0xFFFFA500),
-                size: 20,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
           const Text(
             'Go Premium',
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
-            'Dapatkan rencana diet personal dan analisis nutrisi mendalam untuk hasil yang lebih cepat.',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.70),
-              fontSize: 14,
-              height: 1.5,
-            ),
+            'Dapatkan analisis nutrisi mendalam dan rekomendasi diet personal.',
+            style: TextStyle(color: Colors.white.withOpacity(0.7)),
           ),
+
           const SizedBox(height: 20),
+
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -731,19 +932,8 @@ class _ProfilePageState extends State<ProfilePage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFA500),
                 foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
               ),
-              child: const Text(
-                'Upgrade Sekarang',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.2,
-                ),
-              ),
+              child: const Text('Upgrade Sekarang'),
             ),
           ),
         ],
@@ -751,7 +941,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ================= LOGOUT BUTTON =================
+  // ================= LOGOUT =================
+
   Widget _buildLogoutButton() {
     return SizedBox(
       width: double.infinity,
@@ -784,10 +975,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // ================= REFRESH =================
+
   Future<void> _onRefresh() async {
     await Future.wait([
       _loadUser(),
-      _loadProfile(),
       _profileViewModel.getProfile(),
       _loadScreening(),
     ]);
